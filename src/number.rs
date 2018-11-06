@@ -104,6 +104,12 @@ impl Debug for Number {
     }
 }
 
-// pub trait ToNumber {
-//     fn to_number(self) -> Number;
-// }
+impl fmt::Display for Number {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.n {
+            N::Pos(i) => write!(f, "{}", i),
+            N::Neg(i) => write!(f, "{}", i),
+            N::Float(i) => write!(f, "{}", i),
+        }
+    }
+}
