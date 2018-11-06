@@ -10,7 +10,7 @@ pub type Date = chrono::Date<chrono::Utc>;
 #[cfg(feature = "datetime")]
 pub type DateTime = chrono::DateTime<chrono::Utc>;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum Value {
     Null,
     String(String),
