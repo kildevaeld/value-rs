@@ -1,0 +1,13 @@
+[package]
+name = "value"
+version = "0.1.0"
+authors = ["Rasmus Kildevæld <rasmuskildevaeld@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+chrono = { version = "^0.4.6", optional = true}
+
+
+[features]
+default = []
+datetime = ["chrono"]
