@@ -6,9 +6,9 @@ use std::fmt::{self, Debug};
 use std::mem;
 
 #[cfg(feature = "datetime")]
-pub type Date = chrono::Date<chrono::Utc>;
+pub type Date = chrono::NaiveDate;
 #[cfg(feature = "datetime")]
-pub type DateTime = chrono::DateTime<chrono::Utc>;
+pub type DateTime = chrono::NaiveDateTime;
 
 #[derive(PartialEq, Clone)]
 pub enum Value {
