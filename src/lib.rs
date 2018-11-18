@@ -14,6 +14,8 @@ mod value;
 
 pub use self::map::*;
 pub use self::number::*;
+#[cfg(feature = "serde_enc")]
+pub use self::serde_enc::*;
 pub use self::to_value::ToValue;
 pub use self::value::*;
 
