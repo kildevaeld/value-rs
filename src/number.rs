@@ -113,3 +113,27 @@ impl fmt::Display for Number {
         }
     }
 }
+
+impl From<i64> for Number {
+    fn from(n: i64) -> Self {
+        Number::from_i64(n)
+    }
+}
+
+impl From<u64> for Number {
+    fn from(n: u64) -> Self {
+        Number::from_u64(n)
+    }
+}
+
+impl From<i8> for Number {
+    fn from(n: i8) -> Self {
+        Number::from_i64(n as i64)
+    }
+}
+
+impl From<u8> for Number {
+    fn from(n: u8) -> Self {
+        Number::from_u64(n as u64)
+    }
+}

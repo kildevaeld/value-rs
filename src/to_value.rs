@@ -93,3 +93,48 @@ to_number_impl!(i64, i64, from_i64);
 to_number_impl!(u64, u64, from_u64);
 to_number_impl!(f32, f64, from_f64);
 to_number_impl!(f64, f64, from_f64);
+
+// impl<'a, T: ?Sized> ToValue for &'a T
+// where
+//     T: ToValue,
+// {
+//     fn to_value(self) -> Value {
+//         (*self).to_value()
+//     }
+// }
+
+// impl<'a, T: ?Sized> ToValue for &'a T
+// where
+//     T: ToValue,
+// {
+//     fn to_value(self) -> Value {
+//         (**self).to_value()
+//     }
+// }
+
+// impl<'a, T: ?Sized> ToValue for &'a mut T
+// where
+//     T: ToValue,
+// {
+//     fn to_value(self) -> Value {
+//         (*self).to_value()
+//     }
+// }
+
+// impl<'a, T: ?Sized> ToValue for &'a &'a &'a &'a T
+// where
+//     T: ToValue,
+// {
+//     fn to_value(self) -> Value {
+//         (****self).to_value()
+//     }
+// }
+
+// impl<T> ToValue for &&T
+// where
+//     T: ToValue,
+// {
+//     fn to_value(self) -> Value {
+//         self.to_value()
+//     }
+// }

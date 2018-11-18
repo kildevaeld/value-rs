@@ -1,10 +1,14 @@
 #[cfg(feature = "datetime")]
 pub extern crate chrono;
+#[cfg(feature = "serde_enc")]
+extern crate serde;
 
 #[macro_use]
 pub mod macros;
 mod map;
 mod number;
+#[cfg(feature = "serde_enc")]
+mod serde_enc;
 mod to_value;
 mod value;
 
