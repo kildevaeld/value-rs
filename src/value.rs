@@ -11,6 +11,39 @@ pub type Date = chrono::NaiveDate;
 pub type DateTime = chrono::NaiveDateTime;
 
 #[derive(PartialEq, Clone)]
+pub enum Type {
+    Null,
+    String,
+    Number,
+    Bytes,
+    Array,
+    Object,
+    Bool,
+    #[cfg(feature = "datetime")]
+    Date,
+    #[cfg(feature = "datetime")]
+    DateTime,
+}
+
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Type::Null => write!(f, "null"),
+            Type::String => write!(f, "string"),
+            Type::Number => write!(f, "number"),
+            Type::Bytes => write!(f, "bytes"),
+            Type::Array => write!(f, "array"),
+            Type::Object => write!(f, "object"),
+            Type::Bool => write!(f, "bool"),
+            #[cfg(feature = "datetime")]
+            Type::Date => write!(f, "date"),
+            #[cfg(feature = "datetime")]
+            Type::DateTime => write!(f, "datetime"),
+        }
+    }
+}
+
+#[derive(PartialEq, Clone)]
 pub enum Value {
     Null,
     String(String),
@@ -44,6 +77,22 @@ impl Debug for Value {
 }
 
 impl Value {
+    pub fn value_type(&self) -> Type {
+        match self {
+            Value::Null => Type::Null,
+            Value::Bool(_) => Type::Bool,
+            Value::Number(_) => Type::Number,
+            Value::String(_) => Type::String,
+            Value::Array(_) => Type::Array,
+            Value::Object(_) => Type::Object,
+            Value::Bytes(_) => Type::Bytes,
+            #[cfg(feature = "datetime")]
+            Value::Date(_) => Type::Date,
+            #[cfg(feature = "datetime")]
+            Value::DateTime(_) => Type::DateTime,
+        }
+    }
+
     pub fn as_object(&self) -> Option<&Map<String, Value>> {
         match *self {
             Value::Object(ref v) => Some(v),

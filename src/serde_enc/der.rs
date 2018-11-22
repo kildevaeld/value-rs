@@ -3,7 +3,7 @@ use serde::de::{self, Deserialize, DeserializeSeed, MapAccess, SeqAccess, Visito
 
 use super::super::map::Map;
 use super::super::number::Number;
-use super::super::value::Value;
+use super::super::value::{Type, Value};
 use std::fmt;
 
 impl<'de> Deserialize<'de> for Value {
@@ -172,5 +172,29 @@ impl<'de> Visitor<'de> for KeyClassifier {
             ::raw::TOKEN => Ok(KeyClass::RawValue),
             _ => Ok(KeyClass::Map(s)),
         }
+    }
+}
+
+impl<'de> Deserialize<'de> for Type {
+    fn deserialize<D>(deserializer: D) -> Result<Type, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let v = match String::deserialize(deserializer)?.as_str() {
+            "null" => Type::Null,
+            "bool" => Type::Bool,
+            "number" => Type::Number,
+            "string" => Type::String,
+            "array" => Type::Array,
+            "object" => Type::Object,
+            "bytes" => Type::Bytes,
+            #[cfg(feature = "datetime")]
+            "date" => Type::Date,
+            #[cfg(feature = "datetime")]
+            "datetime" => Type::DateTime,
+            _ => Type::Null,
+        };
+
+        Ok(v)
     }
 }
