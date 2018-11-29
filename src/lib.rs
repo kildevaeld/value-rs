@@ -1,13 +1,13 @@
 #[cfg(feature = "datetime")]
 pub extern crate chrono;
-#[cfg(feature = "serde_enc")]
+#[cfg(feature = "serde")]
 extern crate serde;
 
 #[macro_use]
 pub mod macros;
 mod map;
 mod number;
-#[cfg(feature = "serde_enc")]
+#[cfg(feature = "serde")]
 pub mod serde_enc;
 mod to_value;
 mod value;
@@ -25,7 +25,7 @@ mod tests {
     fn it_works() {
         val!("Test mig");
         val!(32);
-        val!(val!{
+        val!(val! {
             "test" => "mig",
             "test2" => val!{
                 "test" => 200,
@@ -35,7 +35,7 @@ mod tests {
         val!(val!["test", 200, true]);
 
         val!["test", 200, false];
-        val!{
+        val! {
             "rapper" => true,
             "test" => val!["ost", 2.3455533, -2.3]
         };

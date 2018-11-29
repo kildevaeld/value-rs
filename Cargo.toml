@@ -11,4 +11,3 @@ serde = { version = "^1.0", optional = true }
 [features]
 default = []
 datetime = ["chrono"]
-serde_enc = ["serde"]
