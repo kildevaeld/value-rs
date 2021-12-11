@@ -260,7 +260,7 @@ macro_rules! value_internal {
     };
 
     ({ $($tt:tt)+ }) => {
-        $crate::value::Value::Map({
+        $crate::Value::Map({
             let mut object = std::collections::BTreeMap::new();
             value_internal!(@object object () ($($tt)+) ($($tt)+));
             object
