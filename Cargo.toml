@@ -1,14 +1,5 @@
-[package]
-name = "value"
-version = "0.1.0"
-edition = "2021"
+[workspace]
 
-[dependencies]
-serde_lib = { version = "1", default-features = false, features = ["alloc"], package = "serde", optional = true }
-ordered_float_lib = { version = "2", default-features = false, package = "ordered-float", optional = true }
-
-[features]
-default = [ "std", "serde" ]
-std = []
-serde = [ "serde_lib" ]
-ordered_float = ["ordered_float_lib"]
+members = [
+    "value"
+]
