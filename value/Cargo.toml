@@ -1,0 +1,16 @@
+[package]
+name = "value"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde_lib = { version = "1", default-features = false, features = ["alloc"], package = "serde", optional = true }
+ordered_float_lib = { version = "2", default-features = false, package = "ordered-float", optional = true }
+chrono = {version = "0.4", default-features = false, optional = true, features = ["serde"] }
+
+[features]
+default = [ "std" ]
+std = []
+serde = [ "serde_lib" ]
+ordered_float = ["ordered_float_lib"]
+datetime = [ "chrono" ]
