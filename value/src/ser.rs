@@ -1,3 +1,5 @@
+use crate::number::Number;
+
 use super::value::Value;
 #[cfg(not(feature = "std"))]
 use alloc::{
@@ -41,25 +43,10 @@ impl ser::Serialize for Value {
     fn serialize<S: ser::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         match *self {
             Value::Bool(v) => s.serialize_bool(v),
-            Value::U8(v) => s.serialize_u8(v),
-            Value::U16(v) => s.serialize_u16(v),
-            Value::U32(v) => s.serialize_u32(v),
-            Value::U64(v) => s.serialize_u64(v),
-            Value::I8(v) => s.serialize_i8(v),
-            Value::I16(v) => s.serialize_i16(v),
-            Value::I32(v) => s.serialize_i32(v),
-            Value::I64(v) => s.serialize_i64(v),
-            #[cfg(feature = "ordered_float")]
-            Value::F32(v) => s.serialize_f32(*v),
-            #[cfg(feature = "ordered_float")]
-            Value::F64(v) => s.serialize_f64(*v),
-            #[cfg(not(feature = "ordered_float"))]
-            Value::F32(v) => s.serialize_f32(v),
-            #[cfg(not(feature = "ordered_float"))]
-            Value::F64(v) => s.serialize_f64(v),
             Value::Char(v) => s.serialize_char(v),
             Value::String(ref v) => s.serialize_str(v),
             Value::None => s.serialize_none(),
+            Value::Number(n) => n.serialize(s),
             // Value::Option(Some(ref v)) => s.serialize_some(v),
             Value::List(ref v) => v.serialize(s),
             Value::Map(ref v) => v.serialize(s),
@@ -68,6 +55,32 @@ impl ser::Serialize for Value {
             Value::Date(v) => v.serialize(s),
             #[cfg(feature = "datetime")]
             Value::DateTime(v) => v.serialize(s),
+        }
+    }
+}
+
+impl ser::Serialize for Number {
+    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde_lib::Serializer,
+    {
+        match *self {
+            Number::U8(v) => s.serialize_u8(v),
+            Number::U16(v) => s.serialize_u16(v),
+            Number::U32(v) => s.serialize_u32(v),
+            Number::U64(v) => s.serialize_u64(v),
+            Number::I8(v) => s.serialize_i8(v),
+            Number::I16(v) => s.serialize_i16(v),
+            Number::I32(v) => s.serialize_i32(v),
+            Number::I64(v) => s.serialize_i64(v),
+            #[cfg(feature = "ordered_float")]
+            Number::F32(v) => s.serialize_f32(*v),
+            #[cfg(feature = "ordered_float")]
+            Number::F64(v) => s.serialize_f64(*v),
+            #[cfg(not(feature = "ordered_float"))]
+            Number::F32(v) => s.serialize_f32(v),
+            #[cfg(not(feature = "ordered_float"))]
+            Number::F64(v) => s.serialize_f64(v),
         }
     }
 }
@@ -94,43 +107,43 @@ impl ser::Serializer for Serializer {
     }
 
     fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::I8(v))
+        Ok(Value::Number(v.into()))
     }
 
     fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::I16(v))
+        Ok(Value::Number(v.into()))
     }
 
     fn serialize_i32(self, v: i32) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::I32(v))
+        Ok(Value::Number(v.into()))
     }
 
     fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::I64(v))
+        Ok(Value::Number(v.into()))
     }
 
     fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::U8(v))
+        Ok(Value::Number(v.into()))
     }
 
     fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::U16(v))
+        Ok(Value::Number(v.into()))
     }
 
     fn serialize_u32(self, v: u32) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::U32(v))
+        Ok(Value::Number(v.into()))
     }
 
     fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::U64(v))
+        Ok(Value::Number(v.into()))
     }
 
     fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::F32(v.into()))
+        Ok(Value::Number(v.into()))
     }
 
     fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::F64(v.into()))
+        Ok(Value::Number(v.into()))
     }
 
     fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {

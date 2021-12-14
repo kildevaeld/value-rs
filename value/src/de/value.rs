@@ -10,7 +10,8 @@ use serde_lib::{de, forward_to_deserialize_any};
 #[cfg(feature = "std")]
 use std::collections::BTreeMap;
 
-use super::value::Value;
+use super::number;
+use crate::value::Value;
 
 #[derive(Debug)]
 pub enum Unexpected {
@@ -37,22 +38,7 @@ pub enum Unexpected {
 pub(crate) fn unexpected(value: &Value) -> serde_lib::de::Unexpected {
     match *value {
         Value::Bool(b) => serde_lib::de::Unexpected::Bool(b),
-        Value::U8(n) => serde_lib::de::Unexpected::Unsigned(n as u64),
-        Value::U16(n) => serde_lib::de::Unexpected::Unsigned(n as u64),
-        Value::U32(n) => serde_lib::de::Unexpected::Unsigned(n as u64),
-        Value::U64(n) => serde_lib::de::Unexpected::Unsigned(n),
-        Value::I8(n) => serde_lib::de::Unexpected::Signed(n as i64),
-        Value::I16(n) => serde_lib::de::Unexpected::Signed(n as i64),
-        Value::I32(n) => serde_lib::de::Unexpected::Signed(n as i64),
-        Value::I64(n) => serde_lib::de::Unexpected::Signed(n),
-        #[cfg(feature = "ordered_float")]
-        Value::F32(n) => serde_lib::de::Unexpected::Float(*n as f64),
-        #[cfg(feature = "ordered_float")]
-        Value::F64(n) => serde_lib::de::Unexpected::Float(*n),
-        #[cfg(not(feature = "ordered_float"))]
-        Value::F32(n) => serde_lib::de::Unexpected::Float(n as f64),
-        #[cfg(not(feature = "ordered_float"))]
-        Value::F64(n) => serde_lib::de::Unexpected::Float(n),
+        Value::Number(ref n) => number::unexpected(&n),
         Value::Char(c) => serde_lib::de::Unexpected::Char(c),
         Value::String(ref s) => serde_lib::de::Unexpected::Str(s),
         Value::None => serde_lib::de::Unexpected::Option,
@@ -258,43 +244,43 @@ impl<'de> de::Visitor<'de> for ValueVisitor {
     }
 
     fn visit_i8<E>(self, value: i8) -> Result<Value, E> {
-        Ok(Value::I8(value))
+        Ok(Value::Number(value.into()))
     }
 
     fn visit_i16<E>(self, value: i16) -> Result<Value, E> {
-        Ok(Value::I16(value))
+        Ok(Value::Number(value.into()))
     }
 
     fn visit_i32<E>(self, value: i32) -> Result<Value, E> {
-        Ok(Value::I32(value))
+        Ok(Value::Number(value.into()))
     }
 
     fn visit_i64<E>(self, value: i64) -> Result<Value, E> {
-        Ok(Value::I64(value))
+        Ok(Value::Number(value.into()))
     }
 
     fn visit_u8<E>(self, value: u8) -> Result<Value, E> {
-        Ok(Value::U8(value))
+        Ok(Value::Number(value.into()))
     }
 
     fn visit_u16<E>(self, value: u16) -> Result<Value, E> {
-        Ok(Value::U16(value))
+        Ok(Value::Number(value.into()))
     }
 
     fn visit_u32<E>(self, value: u32) -> Result<Value, E> {
-        Ok(Value::U32(value))
+        Ok(Value::Number(value.into()))
     }
 
     fn visit_u64<E>(self, value: u64) -> Result<Value, E> {
-        Ok(Value::U64(value))
+        Ok(Value::Number(value.into()))
     }
 
     fn visit_f32<E>(self, value: f32) -> Result<Value, E> {
-        Ok(Value::F32(value.into()))
+        Ok(Value::Number(value.into()))
     }
 
     fn visit_f64<E>(self, value: f64) -> Result<Value, E> {
-        Ok(Value::F64(value.into()))
+        Ok(Value::Number(value.into()))
     }
 
     fn visit_char<E>(self, value: char) -> Result<Value, E> {
@@ -392,28 +378,10 @@ where
     fn deserialize_any<V: de::Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         match self.value {
             Value::Bool(v) => visitor.visit_bool(v),
-            Value::U8(v) => visitor.visit_u8(v),
-            Value::U16(v) => visitor.visit_u16(v),
-            Value::U32(v) => visitor.visit_u32(v),
-            Value::U64(v) => visitor.visit_u64(v),
-            Value::I8(v) => visitor.visit_i8(v),
-            Value::I16(v) => visitor.visit_i16(v),
-            Value::I32(v) => visitor.visit_i32(v),
-            Value::I64(v) => visitor.visit_i64(v),
-            #[cfg(feature = "ordered_float")]
-            Value::F32(v) => visitor.visit_f32(*v),
-            #[cfg(feature = "ordered_float")]
-            Value::F64(v) => visitor.visit_f64(*v),
-            #[cfg(not(feature = "ordered_float"))]
-            Value::F32(v) => visitor.visit_f32(v),
-            #[cfg(not(feature = "ordered_float"))]
-            Value::F64(v) => visitor.visit_f64(v),
+            Value::Number(n) => number::NumberDeserializer::<E>::new(n).deserialize_any(visitor),
             Value::Char(v) => visitor.visit_char(v),
             Value::String(v) => visitor.visit_string(v),
-            // Value::Unit => visitor.visit_unit(),
             Value::None => visitor.visit_none(),
-            // Value::Option(Some(v)) => visitor.visit_some(ValueDeserializer::new(*v)),
-            // Value::Newtype(v) => visitor.visit_newtype_struct(ValueDeserializer::new(*v)),
             Value::List(v) => visitor.visit_seq(de::value::SeqDeserializer::new(
                 v.into_iter().map(ValueDeserializer::new),
             )),
