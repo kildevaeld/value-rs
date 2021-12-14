@@ -9,12 +9,13 @@ mod macros;
 #[cfg(feature = "serde")]
 pub mod de;
 mod index;
+mod map;
 mod merge;
 #[cfg(feature = "serde")]
 pub mod ser;
 mod value;
 
-pub use self::{index::Index, merge::*, value::*};
+pub use self::{index::Index, map::*, merge::*, value::*};
 
 #[cfg(feature = "serde")]
 pub use self::{de::from_value, ser::to_value};
