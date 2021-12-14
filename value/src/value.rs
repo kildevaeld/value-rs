@@ -46,6 +46,7 @@ impl ValueType {
             (Char, Bool | Number | String) => true,
             (Map | List | String, Bool) => true,
             (String, Bytes) => true,
+            (Map, List) => true,
             (_, List) => true,
             _ => false,
         }
@@ -214,6 +215,14 @@ impl Value {
             (Value::String(s), ValueType::Bytes) => Some(Value::Bytes(s.as_bytes().to_vec())),
             (Value::List(l), ValueType::Bool) => Some(Value::Bool(!l.is_empty())),
             (Value::Map(m), ValueType::Bool) => Some(Value::Bool(!m.is_empty())),
+            (Value::Map(m), ValueType::List) => {
+                let list = m
+                    .into_iter()
+                    .map(|(k, v)| Value::List(vec![k.into(), v]))
+                    .collect();
+
+                Some(Value::List(list))
+            }
             (value, ValueType::List) => Some(Value::List(vec![value])),
             _ => None,
         }
@@ -244,6 +253,8 @@ from_impl!(bool, Bool);
 from_impl!(Number, Number);
 from_impl!(String, String);
 from_impl!(Vec<u8>, Bytes);
+from_impl!(Vec<Value>, List);
+from_impl!(BTreeMap<String, Value>, Map);
 
 impl<'a> From<&'a str> for Value {
     fn from(s: &'a str) -> Value {

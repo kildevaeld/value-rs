@@ -80,3 +80,9 @@ impl<'a> ops::IndexMut<&'a str> for Map {
         self.inner.get_mut(index).unwrap()
     }
 }
+
+impl From<Map> for Value {
+    fn from(map: Map) -> Value {
+        Value::Map(map.inner)
+    }
+}
