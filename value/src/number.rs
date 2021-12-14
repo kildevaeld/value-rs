@@ -98,6 +98,11 @@ impl Number {
             Number::F64(_) => NumberType::F64,
         }
     }
+
+    pub fn is(&self, ty: NumberType) -> bool {
+        self.ty() == ty
+    }
+
     #[inline]
     pub fn as_u64(&self) -> u64 {
         match *self {
