@@ -34,14 +34,19 @@ pub enum ValueType {
 impl ValueType {
     pub fn can_cast(&self, ty: &ValueType) -> bool {
         use ValueType::*;
+        if self == ty {
+            return true;
+        }
+
         match (*self, *ty) {
-            (Number, Number | String) => true,
+            (Number, Number | String | Bool | Char) => true,
             #[cfg(feature = "datetime")]
             (DateTime | Date, Date | DateTime | String) => true,
-            (String, String) => true,
-            (Map, Map) => true,
-            (List, List) => true,
-            (Bool, Bool) => true,
+            (Bool, Number | String | Char) => true,
+            (Char, Bool | Number | String) => true,
+            (Map | List | String, Bool) => true,
+            (String, Bytes) => true,
+            (_, List) => true,
             _ => false,
         }
     }
@@ -180,6 +185,38 @@ impl Value {
     #[cfg(feature = "serde")]
     pub fn try_into<'de, T: Deserialize<'de>>(self) -> Result<T, DeserializerError> {
         T::deserialize(self)
+    }
+
+    pub fn convert(self, ty: ValueType) -> Option<Value> {
+        let selftype = self.ty();
+        if selftype == ty {
+            return Some(self);
+        }
+
+        match (self, ty) {
+            (Value::Number(n), ValueType::String) => Some(Value::String(n.to_string())),
+            (Value::Number(n), ValueType::Bool) => Some(Value::Bool(n.as_u8() != 0)),
+            (Value::Number(n), ValueType::Char) => Some(Value::Char(n.as_u8() as char)),
+            (Value::Bool(b), ValueType::String) => Some(Value::String(format!("{}", b))),
+            (Value::Bool(b), ValueType::Number) => Some(Value::Number((b as u8).into())),
+            (Value::Bool(b), ValueType::Char) => Some(Value::Char((b as u8).into())),
+            (Value::Char(c), ValueType::Number) => Some(Value::Number((c as u8).into())),
+            (Value::Char(c), ValueType::String) => Some(Value::String(format!("{}", c))),
+            (Value::Char(c), ValueType::Bool) => Some(Value::Bool(c as u8 != 0)),
+            (Value::String(s), ValueType::Bool) => Some(Value::Bool(!s.is_empty())),
+            (Value::String(s), ValueType::Char) => {
+                if s.len() == 1 {
+                    Some(Value::Char(s.chars().next().unwrap()))
+                } else {
+                    None
+                }
+            }
+            (Value::String(s), ValueType::Bytes) => Some(Value::Bytes(s.as_bytes().to_vec())),
+            (Value::List(l), ValueType::Bool) => Some(Value::Bool(!l.is_empty())),
+            (Value::Map(m), ValueType::Bool) => Some(Value::Bool(!m.is_empty())),
+            (value, ValueType::List) => Some(Value::List(vec![value])),
+            _ => None,
+        }
     }
 }
 
