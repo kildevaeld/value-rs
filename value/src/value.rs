@@ -202,6 +202,7 @@ impl Value {
         }
 
         match (self, ty) {
+            (Value::Number(n), ValueType::Number(_)) => Some(Value::Number(n)),
             (Value::Number(n), ValueType::String) => Some(Value::String(n.to_string())),
             (Value::Number(n), ValueType::Bool) => Some(Value::Bool(n.as_u8() != 0)),
             (Value::Number(n), ValueType::Char) => Some(Value::Char(n.as_u8() as char)),
