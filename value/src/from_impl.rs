@@ -65,6 +65,6 @@ macro_rules! both_impl {
 
 both_impl!(String, into_string, as_string);
 both_impl!(Vec<u8>, into_bytes, as_bytes);
-// both_impl!(Number, into_number, as_number);
+both_impl!(Number, into_number, as_number);
 both_impl!(BTreeMap<String, Value>, into_map, as_map);
 both_impl!(Vec<Value>, into_list, as_list);

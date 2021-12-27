@@ -3,6 +3,8 @@ use core::fmt;
 #[cfg(feature = "ordered_float")]
 use ordered_float_lib::OrderedFloat;
 
+use crate::Typed;
+
 #[cfg_attr(
     feature = "serde",
     derive(serde_lib::Serialize, serde_lib::Deserialize)
@@ -20,6 +22,7 @@ pub enum NumberType {
     I64,
     F32,
     F64,
+    Any,
 }
 
 #[cfg_attr(
@@ -47,6 +50,12 @@ pub enum Number {
     F32(f32),
     #[cfg(not(feature = "ordered_float"))]
     F64(f64),
+}
+
+impl Typed for Number {
+    fn typed() -> crate::ValueType {
+        crate::ValueType::Number(NumberType::Any)
+    }
 }
 
 impl fmt::Display for Number {
