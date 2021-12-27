@@ -30,7 +30,7 @@ impl Map {
         self.inner.insert(name.to_string(), value.into())
     }
 
-    pub fn get(&mut self, name: impl AsRef<str>) -> Option<&Value> {
+    pub fn get(&self, name: impl AsRef<str>) -> Option<&Value> {
         self.inner.get(name.as_ref())
     }
 
