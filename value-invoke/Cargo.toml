@@ -1,9 +1,14 @@
 [package]
+edition = "2021"
 name = "value-invoke"
 version = "0.1.0"
-edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-value = { path = "../value" }
+serde_lib = {version = "1", default-features = false, features = ["alloc", "derive"], package = "serde", optional = true}
+value = {path = "../value"}
+
+[features]
+default = ["serde"]
+serde = ["serde_lib", "value/serde"]

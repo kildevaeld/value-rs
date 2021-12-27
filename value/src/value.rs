@@ -15,6 +15,11 @@ use super::de::DeserializerError;
 #[cfg(feature = "serde")]
 use serde_lib::de::Deserialize;
 
+#[cfg_attr(
+    feature = "serde",
+    derive(serde_lib::Serialize, serde_lib::Deserialize)
+)]
+#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub enum ValueType {
     Bool,

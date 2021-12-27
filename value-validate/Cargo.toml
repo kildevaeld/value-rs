@@ -1,0 +1,15 @@
+[package]
+edition = "2021"
+name = "value-validate"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+regexp = {version = "0.3", optional = true}
+thiserror = {version = "1"}
+valid = {git = "https://github.com/kildevaeld/valid-rs", default-features = false}
+value = {path = "../value", features = ["serde"]}
+
+[features]
+default = []
