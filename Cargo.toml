@@ -4,4 +4,5 @@ members = [
   "value",
   "value-invoke", #   "value-validate",
   "value-macros",
+  "value-expr",
 ]
