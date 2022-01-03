@@ -1,6 +1,9 @@
+#[cfg(not(feature = "std"))]
+use alloc::{collections::BTreeMap, string::String, vec::Vec};
+#[cfg(feature = "std")]
 use std::collections::BTreeMap;
 
-use crate::{NumberType, Value, ValueType};
+use crate::{Map, NumberType, Value, ValueType};
 
 pub trait Typed {
     fn typed() -> ValueType;
@@ -36,5 +39,6 @@ ty_impl!(f64, number F64);
 ty_impl!(String, String);
 ty_impl!(bool, Bool);
 ty_impl!(BTreeMap<String, Value>, Map);
+ty_impl!(Map, Map);
 ty_impl!(Vec<Value>, List);
 ty_impl!(Vec<u8>, Bytes);

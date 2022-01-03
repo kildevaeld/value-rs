@@ -9,6 +9,8 @@ version = "0.1.0"
 async-trait = "0.1"
 serde_lib = {version = "1", default-features = false, features = ["alloc", "derive"], package = "serde", optional = true}
 value = {path = "../value"}
+value-validate = {path = "../value-validate"}
+
 [features]
-default = ["serde"]
-serde = ["serde_lib", "value/serde"]
+default = []
+serde = ["serde_lib", "value/serde", "value-validate/serde"]

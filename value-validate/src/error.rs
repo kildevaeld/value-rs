@@ -1,7 +1,12 @@
-use std::error::Error as StdError;
-use thiserror::Error as ThisError;
-#[derive(ThisError, Debug)]
+use value::ValueType;
+
+use alloc::vec::Vec;
+
+#[derive(Debug)]
 pub enum Error {
-    #[error("valid")]
-    Valid(#[from] valid::Error),
+    Multi(Vec<Error>),
+    InvalidType {
+        expected: ValueType,
+        found: ValueType,
+    },
 }

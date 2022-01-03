@@ -17,13 +17,9 @@ pub trait ExprVisitor<T> {
     fn visit_relational_expr(&mut self, expr: &RelationalExpr<T>) -> Self::Output;
     fn visit_field_expr(&mut self, expr: &FieldExpr<T>) -> Self::Output;
     fn visit_relation_expr(&mut self, expr: &RelationExpr<T>) -> Self::Output;
-    fn visit_value_expr(&mut self, expr: &ValueExpr<T>) -> Self::Output;
+    fn visit_value_expr(&mut self, expr: &ValueExpr) -> Self::Output;
+    fn visit_entity_expr(&mut self, expr: &EntityExpr<T>) -> Self::Output;
 }
-
-// pub trait Queryable {
-//     type Item;
-//     fn list(&self, )
-// }
 
 pub enum Error {}
 
@@ -52,7 +48,8 @@ pub enum Expr<T> {
     Relational(RelationalExpr<T>),
     Field(FieldExpr<T>),
     Relation(RelationExpr<T>),
-    Value(ValueExpr<T>),
+    Value(ValueExpr),
+    Entity(EntityExpr<T>),
 }
 
 impl<T> Expr<T> {
@@ -63,6 +60,7 @@ impl<T> Expr<T> {
             Expr::Relation(rel) => visitor.visit_relation_expr(rel),
             Expr::Relational(rel) => visitor.visit_relational_expr(rel),
             Expr::Value(val) => visitor.visit_value_expr(val),
+            Expr::Entity(e) => visitor.visit_entity_expr(e),
         }
     }
 }
@@ -75,12 +73,32 @@ pub struct LogicalExpr<T> {
     pub op: LogicalOperator,
 }
 
+impl<T> LogicalExpr<T> {
+    pub fn new(left: Expr<T>, right: Expr<T>, op: LogicalOperator) -> LogicalExpr<T> {
+        LogicalExpr {
+            left: Box::new(left),
+            right: Box::new(right),
+            op,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 
 pub struct RelationalExpr<T> {
     pub left: Box<Expr<T>>,
     pub right: Box<Expr<T>>,
     pub op: RelationalOperator,
+}
+
+impl<T> RelationalExpr<T> {
+    pub fn new(left: Expr<T>, right: Expr<T>, op: RelationalOperator) -> RelationalExpr<T> {
+        RelationalExpr {
+            left: Box::new(left),
+            right: Box::new(right),
+            op,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -97,9 +115,17 @@ pub struct RelationExpr<T> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ValueExpr<T> {
-    String(T),
-    Number(Number),
-    Bool(bool),
-    List(Vec<ValueExpr<T>>),
+pub struct ValueExpr {
+    value: Value,
+}
+
+impl ValueExpr {
+    pub fn new(val: impl Into<Value>) -> ValueExpr {
+        ValueExpr { value: val.into() }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct EntityExpr<T> {
+    pub name: T,
 }

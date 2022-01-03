@@ -1,125 +1,183 @@
-use super::expr::*;
-use peg::{error::ParseError, str::LineCol, ParseLiteral};
+use nom::{
+    branch::alt,
+    bytes::complete::{tag, tag_no_case, take, take_while},
+    character::{
+        complete::{alpha1, alphanumeric1, digit1, one_of},
+        is_digit,
+    },
+    combinator::{opt, recognize},
+    error::{context, ErrorKind, VerboseError},
+    multi::{count, many0, many1, many_m_n},
+    sequence::{preceded, separated_pair, terminated, tuple},
+    AsChar, Err as NomErr, IResult, InputTakeAtPosition,
+};
+use value::Number;
 
-#[derive(Debug)]
-pub enum Stmt<T> {
-    Expr(Expr<T>),
-    Limit(u64),
-    Offset(u64),
+use crate::{
+    expr::{
+        Expr, FieldExpr, LogicalExpr, LogicalOperator, RelationalExpr, RelationalOperator,
+        ValueExpr,
+    },
+    query::Query,
+};
+
+pub type Res<T, U> = IResult<T, U, VerboseError<T>>;
+
+fn url_code_points<T>(i: T) -> Res<T, T>
+where
+    T: InputTakeAtPosition,
+    <T as InputTakeAtPosition>::Item: AsChar,
+{
+    i.split_at_position1_complete(
+        |item| {
+            let char_item = item.as_char();
+            !(char_item == '-') && !char_item.is_alphanum() && !(char_item == '.')
+            // ... actual ascii code points and url encoding...: https://infra.spec.whatwg.org/#ascii-code-point
+        },
+        ErrorKind::AlphaNumeric,
+    )
 }
 
-peg::parser! {
-    grammar query_parser() for str {
+fn field<'a>(input: &'a str) -> Res<&'a str, Expr<&'a str>> {
+    context("field", url_code_points)(input).map(|(next_input, ret)| {
+        //
 
-    pub rule qs() -> Vec<Stmt<&'input str>>
-      = l:expr() ** "&" {
-          l
-      }
-
-    rule expr() -> Stmt<&'input str>
-      = e:(e:expr2() { Stmt::Expr(e) } / limit() / offset()) { e }
-
-    rule expr2() -> Expr<&'input str>
-      = precedence!{
-          l:(@) op:operator() r:@ { Expr::Relational(RelationalExpr {
-              left: Box::new(l),
-              right: Box::new(r),
-              op: op
-          }) }
-          --
-          l:(@) "__" e:@ { Expr::Relation(RelationExpr {
-              relation: Box::new(l),
-              field: Box::new(e)
-          }) }
-          --
-          p:primary_expr() { p }
-      }
-
-
-    rule primary_expr() -> Expr<&'input str>
-      = l:literal() { l }
-      / f:$field() { Expr::Field(FieldExpr {
-          name: f
-      }) }
-
-    rule limit() -> Stmt<&'input str>
-        = "$limit" "=" v:integer_literal() { Stmt::Limit(v) }
-
-    rule offset() -> Stmt<&'input str>
-        = "$offset" "=" v:integer_literal() { Stmt::Offset(v) }
-
-
-    rule keywords()
-        = operator()
-        / separator()
-        / keyword("$limit")
-        / keyword("$offset")
-
-    rule operator() -> RelationalOperator
-        = "=" { RelationalOperator::Eq }
-        / keyword("__eq") "=" { RelationalOperator::Eq }
-        / keyword("__lt") "=" { RelationalOperator::Lt }
-        / keyword("__lte")"="  { RelationalOperator::Lte }
-        / keyword("__gt") "="{ RelationalOperator::Gt }
-        / keyword("__gte") "=" { RelationalOperator::Gte }
-        / keyword("__neq") "=" { RelationalOperator::Neq }
-        / keyword("__in") "=" { RelationalOperator::In }
-
-
-
-    rule field()
-        = (!( keywords() )  alphanum()) ++ ("_" !"_")
-
-
-    rule keyword(id: &'static str) = ##parse_string_literal(id) !['0'..='9' | 'a'..='z' | 'A'..='Z' | '_']
-
-
-    rule literal() -> Expr<&'input str>
-      = n:(number_literal() / bool_literal() / list_literal() / string_literal()) { Expr::Value(n)}
-
-
-    rule number_literal() -> ValueExpr<&'input str>
-      = i:integer_literal() { ValueExpr::Number(i.into()) }
-
-    rule integer_literal() -> u64
-        = i:$(['0'..='9']+) {
-            i.parse().unwrap()
-        }
-
-    rule string_literal() -> ValueExpr<&'input str>
-        =  e:$((!( keywords() / "," ) [_])+) {
-            ValueExpr::String(e)
-        }
-
-    rule bool_literal() -> ValueExpr<&'input str>
-        = b:("true" {true }/ "false" { false }) { ValueExpr::Bool(b) }
-
-    rule list_literal() -> ValueExpr<&'input str>
-        = l:(bool_literal() / number_literal() / string_literal()) ++ "," { ValueExpr::List(l) }
-
-    rule alphanum()
-        =  ['a'..='z' | 'A'..='Z' | '0'..='9' ]+
-
-    rule separator()
-        = "&"
-  }
+        (next_input, Expr::Field(FieldExpr { name: ret }))
+    })
 }
 
-pub fn query<'a>(input: &'a str) -> Result<Vec<Stmt<&'a str>>, ParseError<LineCol>> {
-    query_parser::qs(input)
+fn lookup<'a>(input: &'a str) -> Res<&'a str, Expr<&'a str>> {
+    context("lookup", field)(input)
+}
+
+fn number<'a>(input: &'a str) -> Res<&'a str, ValueExpr> {
+    context("number", integer)(input).map(|(next, number)| (next, ValueExpr::new(number)))
+}
+
+fn string<'a>(input: &'a str) -> Res<&'a str, ValueExpr> {
+    context("string", recognize(alphanumeric1))(input)
+        .map(|(next, number)| (next, ValueExpr::new(number)))
+}
+
+fn integer<'a>(input: &'a str) -> Res<&'a str, Number> {
+    recognize(digit1)(input).and_then(|(next, num)| {
+        //
+        match num.parse::<u64>() {
+            Ok(s) => Ok((next, s.into())),
+            Err(_) => Err(NomErr::Error(VerboseError { errors: vec![] })),
+        }
+    })
+}
+
+fn literal<'a>(input: &'a str) -> Res<&'a str, ValueExpr> {
+    context("literal", alt((number, string)))(input)
+}
+
+fn relational<'a>(input: &'a str) -> Res<&'a str, Expr<&'a str>> {
+    context("relational", tuple((lookup, operator, literal)))(input).map(|(next, res)| {
+        let (lookup, op, literal) = res;
+
+        (
+            next,
+            Expr::Relational(RelationalExpr {
+                left: Box::new(lookup),
+                right: Box::new(Expr::Value(literal)),
+                op,
+            }),
+        )
+    })
+}
+
+fn operator<'a>(input: &'a str) -> Res<&'a str, RelationalOperator> {
+    context(
+        "operator",
+        tuple((
+            opt(tuple((
+                tag("__"),
+                alt((
+                    tag("eq"),
+                    tag("neq"),
+                    tag("lt"),
+                    tag("lte"),
+                    tag("gt"),
+                    tag("gte"),
+                    tag("in"),
+                )),
+            ))),
+            tag("="),
+        )),
+    )(input)
+    .map(|(next, ret)| {
+        //
+        let (op, _) = ret;
+
+        let op = if let Some((_, op)) = op {
+            match op {
+                "eq" => RelationalOperator::Eq,
+                "neq" => RelationalOperator::Neq,
+                "lt" => RelationalOperator::Lt,
+                "lte" => RelationalOperator::Lte,
+                "gt" => RelationalOperator::Gt,
+                "gte" => RelationalOperator::Gte,
+                "in" => RelationalOperator::In,
+                _ => unreachable!("Should not happen"),
+            }
+        } else {
+            RelationalOperator::Eq
+        };
+
+        (next, op)
+    })
+}
+
+// fn relation<'a>(input: &'a str) -> Res<&'a str, Expr<&'a str>> {
+//     context("field", alt((url_code_points, relation)))
+// }
+
+pub fn parse<'a>(input: &'a str) -> Res<&'a str, Option<Expr<&'a str>>> {
+    let out = context(
+        "qs",
+        tuple((
+            relational,
+            many0(tuple((
+                tag("&"),
+                //
+                relational,
+            ))),
+        )),
+    )(input)
+    .map(|(next, ret)| {
+        //
+        let (first, rest) = ret;
+
+        let expr = std::iter::once(first)
+            .chain(rest.into_iter().map(|m| m.1))
+            .fold(None, |acc: Option<Expr<&'a str>>, cur| {
+                //
+                match acc {
+                    Some(acc) => Some(Expr::Logical(LogicalExpr {
+                        left: Box::new(acc),
+                        right: Box::new(cur),
+                        op: LogicalOperator::And,
+                    })),
+                    None => Some(cur),
+                }
+            });
+
+        (next, expr)
+    });
+
+    out
 }
 
 #[cfg(test)]
-mod test {
-    pub use super::*;
+pub mod test {
+    use super::*;
 
     #[test]
     fn test() {
-        let q =
-            query("title__eq=naste&author__id__lte=100&$limit=100&test=false&list__in=hey,mig,dig")
-                .expect("fail");
+        let out = parse("hello__neq=rasmus&nemmelig=hans").expect("");
 
-        // let q = query("test__mig=200").expect("fail");
-        println!("{:#?}", q);
+        println!("OUT {:#?}", out);
     }
 }

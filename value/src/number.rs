@@ -25,13 +25,10 @@ pub enum NumberType {
     Any,
 }
 
-#[cfg_attr(
-    not(feature = "ordered_float"),
-    derive(Debug, Clone, Copy, PartialEq, PartialOrd)
-)]
+#[cfg_attr(not(feature = "ordered_float"), derive(Debug, Clone, Copy, PartialOrd))]
 #[cfg_attr(
     feature = "ordered_float",
-    derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)
+    derive(Debug, Clone, Copy, Eq, PartialOrd, Ord, Hash)
 )]
 pub enum Number {
     U8(u8),
@@ -50,6 +47,17 @@ pub enum Number {
     F32(f32),
     #[cfg(not(feature = "ordered_float"))]
     F64(f64),
+}
+
+impl PartialEq for Number {
+    fn eq(&self, other: &Self) -> bool {
+        let ty = self.ty();
+        if ty == NumberType::F32 || ty == NumberType::F64 || ty == NumberType::Any {
+            self.as_f64() == other.as_f64()
+        } else {
+            self.as_u64() == other.as_u64()
+        }
+    }
 }
 
 impl Typed for Number {

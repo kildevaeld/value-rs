@@ -2,13 +2,15 @@
 use alloc::{
     borrow::ToOwned,
     collections::BTreeMap,
+    format,
     string::{String, ToString},
+    vec,
     vec::Vec,
 };
 #[cfg(feature = "std")]
 use std::{collections::BTreeMap, string::String};
 
-use crate::{number::Number, NumberType};
+use crate::{number::Number, Map, NumberType};
 
 #[cfg(feature = "serde")]
 use super::de::DeserializerError;
@@ -53,6 +55,13 @@ impl ValueType {
             (String, Bytes) => true,
             (Map, List) => true,
             (_, List) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_number(&self) -> bool {
+        match self {
+            ValueType::Number(_) => true,
             _ => false,
         }
     }
@@ -103,7 +112,7 @@ pub enum Value {
     Char(char),
     String(String),
     List(Vec<Value>),
-    Map(BTreeMap<String, Value>),
+    Map(Map),
     Bytes(Vec<u8>),
     #[cfg(feature = "datetime")]
     Date(chrono::NaiveDate),
@@ -113,6 +122,17 @@ pub enum Value {
 }
 
 impl Value {
+    pub fn default_type(ty: ValueType) -> Value {
+        match ty {
+            ValueType::Bool => Value::Bool(false),
+            ValueType::Bytes => Value::Bytes(Vec::default()),
+            ValueType::Char => Value::Char(' '),
+            ValueType::List => Value::List(Vec::default()),
+            ValueType::Map => Value::Map(Map::default()),
+            _ => todo!(""),
+        }
+    }
+
     pub fn ty(&self) -> ValueType {
         match self {
             Value::Bool(_) => ValueType::Bool,
@@ -167,7 +187,7 @@ impl Value {
     as_method!(as_bytes, Bytes, Vec<u8>);
     as_method!(as_bool, Bool, bool);
     as_method!(as_list, List, Vec<Value>);
-    as_method!(as_map, Map, BTreeMap<String, Value>);
+    as_method!(as_map, Map, Map);
     as_method!(as_char, Char, char);
 
     #[cfg(feature = "datetime")]
@@ -179,7 +199,7 @@ impl Value {
     into_method!(into_bytes, Bytes, Vec<u8>);
     into_method!(into_bool, Bool, bool);
     into_method!(into_list, List, Vec<Value>);
-    into_method!(into_map, Map, BTreeMap<String, Value>);
+    into_method!(into_map, Map, Map);
     into_method!(into_char, Char, char);
     into_method!(into_number, Number, Number);
 
@@ -246,7 +266,7 @@ macro_rules! from_impl {
     ($from: ty, $map: ident) => {
         impl From<$from> for Value {
             fn from(from: $from) -> Value {
-                Value::$map(from)
+                Value::$map(from.into())
             }
         }
     };

@@ -1,7 +1,76 @@
-use crate::expr::Expr;
+use value::Value;
 
-pub struct Query<T> {
+use super::builder::Expression;
+use super::expr::Expr;
+
+#[cfg(feature = "parser")]
+use super::parser;
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum Ordering {
+    Asc(String),
+    Desc(String),
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum Filter<S> {
+    Expr(Expr<S>),
+    Id(Value),
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub struct Query<S> {
+    pub filter: Option<Filter<S>>,
     pub limit: Option<u64>,
     pub offset: Option<u64>,
-    pub filter: Option<Expr<T>>,
+    pub columns: Option<Vec<S>>,
+    pub includes: Option<Vec<S>>,
+}
+
+impl<S> Default for Query<S> {
+    fn default() -> Self {
+        Query {
+            filter: None,
+            limit: None,
+            offset: None,
+            columns: None,
+            includes: None,
+        }
+    }
+}
+
+impl<S> Query<S> {
+    pub fn new<E: Expression<S>>(filter: E) -> Query<S> {
+        Query {
+            filter: Some(Filter::Expr(filter.to_ast())),
+            ..Default::default()
+        }
+    }
+
+    pub fn id(value: impl Into<Value>) -> Query<S> {
+        Query {
+            filter: Some(Filter::Id(value.into())),
+            ..Default::default()
+        }
+    }
+
+    pub fn columns(mut self, columns: impl Into<Vec<S>>) -> Self {
+        self.columns = Some(columns.into());
+        self
+    }
+
+    pub fn includes(mut self, includes: impl Into<Vec<S>>) -> Self {
+        self.includes = Some(includes.into());
+        self
+    }
+
+    pub fn limit(mut self, limit: impl Into<Option<u64>>) -> Self {
+        self.limit = limit.into();
+        self
+    }
+
+    pub fn offset(mut self, offset: impl Into<Option<u64>>) -> Self {
+        self.offset = offset.into();
+        self
+    }
 }

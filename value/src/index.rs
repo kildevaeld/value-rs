@@ -1,9 +1,11 @@
+use crate::Map;
+
 use super::Value;
 #[cfg(not(feature = "std"))]
-use alloc::{borrow::ToOwned, collections::BTreeMap, string::String};
+use alloc::{borrow::ToOwned, string::String};
 use core::ops;
 #[cfg(feature = "std")]
-use std::{collections::BTreeMap, string::String};
+use std::string::String;
 // Prevent users from implementing the Index trait.
 mod private {
     pub trait Sealed {}
@@ -74,7 +76,7 @@ impl Index for str {
     }
     fn index_or_insert<'v>(&self, v: &'v mut Value) -> &'v mut Value {
         if v.is_none() {
-            *v = Value::Map(BTreeMap::new());
+            *v = Value::Map(Map::default());
         }
         match *v {
             Value::Map(ref mut map) => map.entry(self.to_owned()).or_insert(Value::None),

@@ -1,7 +1,7 @@
+use core::fmt;
 pub use std::convert::TryFrom;
-use std::{collections::BTreeMap, fmt};
 
-use crate::{number, Number, Typed, Value, ValueType};
+use crate::{Map, Number, Typed, Value, ValueType};
 
 #[derive(Debug, Clone)]
 pub struct ConvertError {
@@ -11,7 +11,11 @@ pub struct ConvertError {
 
 impl fmt::Display for ConvertError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Convert error")
+        write!(
+            f,
+            "Convert error. Expected {:?}. Found: {:?}",
+            self.expected, self.found
+        )
     }
 }
 
@@ -66,5 +70,5 @@ macro_rules! both_impl {
 both_impl!(String, into_string, as_string);
 both_impl!(Vec<u8>, into_bytes, as_bytes);
 both_impl!(Number, into_number, as_number);
-both_impl!(BTreeMap<String, Value>, into_map, as_map);
+both_impl!(Map, into_map, as_map);
 both_impl!(Vec<Value>, into_list, as_list);
