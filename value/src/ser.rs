@@ -1,4 +1,4 @@
-use crate::number::Number;
+use crate::{number::Number, Map};
 
 use super::value::Value;
 #[cfg(not(feature = "std"))]
@@ -210,7 +210,7 @@ impl ser::Serializer for Serializer {
         value.serialize(Serializer).map(|v| {
             let mut map = BTreeMap::new();
             map.insert(variant.to_string(), v);
-            Value::Map(map)
+            Value::Map(map.into())
         })
     }
 
@@ -347,7 +347,7 @@ impl ser::SerializeTupleVariant for SerializeTupleVariant {
     fn end(self) -> Result<Self::Ok, Self::Error> {
         let mut map = BTreeMap::new();
         map.insert(self.0, Value::List(self.1));
-        Ok(Value::Map(map))
+        Ok(Value::Map(map.into()))
     }
 }
 
@@ -380,7 +380,7 @@ impl ser::SerializeMap for SerializeMap {
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::Map(self.map))
+        Ok(Value::Map(self.map.into()))
     }
 }
 
@@ -405,7 +405,7 @@ impl ser::SerializeStruct for SerializeStruct {
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::Map(self.0))
+        Ok(Value::Map(self.0.into()))
     }
 }
 
@@ -431,7 +431,21 @@ impl ser::SerializeStructVariant for SerializeStructVariant {
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
         let mut map = BTreeMap::new();
-        map.insert(self.0, Value::Map(self.1));
-        Ok(Value::Map(map))
+        map.insert(self.0, Value::Map(self.1.into()));
+        Ok(Value::Map(map.into()))
+    }
+}
+
+impl ser::Serialize for Map {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        use ser::SerializeMap;
+        let mut map = serializer.serialize_map(Some(self.len()))?;
+        for (k, v) in &self.inner {
+            map.serialize_entry(k, v)?;
+        }
+        map.end()
     }
 }

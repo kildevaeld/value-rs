@@ -28,12 +28,18 @@ use crate::Value;
     derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)
 )]
 pub struct Map {
-    inner: BTreeMap<String, Value>,
+    pub(crate) inner: BTreeMap<String, Value>,
 }
 
 impl Map {
+    pub fn with_capacity(size: usize) -> Map {
+        Map {
+            inner: BTreeMap::default(),
+        }
+    }
+
     #[inline]
-    pub fn set(&mut self, name: impl ToString, value: impl Into<Value>) -> Option<Value> {
+    pub fn insert(&mut self, name: impl ToString, value: impl Into<Value>) -> Option<Value> {
         self.inner.insert(name.to_string(), value.into())
     }
 

@@ -10,9 +10,9 @@ serde_lib = {version = "1", default-features = false, features = ["alloc", "deri
 slog = {version = "2", optional = true}
 
 [features]
-default = []
+default = ["datetime", "serde"]
 
 datetime = ["chrono"]
 ordered_float = ["ordered_float_lib"]
-serde = ["serde_lib"]
+serde = ["serde_lib", "std"]
 std = []
