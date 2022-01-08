@@ -139,7 +139,7 @@ macro_rules! value_internal {
 
     // Insert the current entry followed by trailing comma.
     (@object $object:ident [$($key:tt)+] ($value:expr) , $($rest:tt)*) => {
-        let _ = $object.insert(($($key)+).into(), $value);
+        let _ = $object.insert(($($key)+), $value);
         value_internal!(@object $object () ($($rest)*) ($($rest)*));
     };
 
@@ -150,7 +150,7 @@ macro_rules! value_internal {
 
     // Insert the last entry without trailing comma.
     (@object $object:ident [$($key:tt)+] ($value:expr)) => {
-        let _ = $object.insert(($($key)+).into(), $value);
+        let _ = $object.insert(($($key)+), $value);
     };
 
     // Next value is `null`.
@@ -256,12 +256,12 @@ macro_rules! value_internal {
     };
 
     ({}) => {
-        $crate::Value::Map(std::collections::BTreeMap::new();)
+        $crate::Value::Map($crate::Map::default())
     };
 
     ({ $($tt:tt)+ }) => {
         $crate::Value::Map({
-            let mut object = std::collections::BTreeMap::new();
+            let mut object = $crate::Map::default();
             value_internal!(@object object () ($($tt)+) ($($tt)+));
             object
         })
