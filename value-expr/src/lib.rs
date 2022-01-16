@@ -1,8 +1,8 @@
 mod builder;
 mod expr;
-#[cfg(feature = "parser")]
-mod parser;
 mod query;
+
+mod predicate;
 
 pub use self::{builder::*, expr::*, query::*};
 

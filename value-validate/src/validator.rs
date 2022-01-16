@@ -11,7 +11,7 @@ use alloc::{
     vec::Vec,
 };
 use core::any::Any;
-use value::{Value, ValueType};
+use value::{NumberType, Value, ValueType};
 
 pub trait ValidatorBuilder {
     fn add_validation(&mut self, validation: ValidationBox);
@@ -68,6 +68,8 @@ impl<V> ValidatorBuilderCommon for V where V: ValidatorBuilder {}
 #[cfg_attr(feature = "serde", serde(tag = "type"))]
 #[derive(Debug)]
 pub enum Validator {
+    #[cfg_attr(feature = "serde", serde(rename = "boolean"))]
+    Bool(BoolValidator),
     #[cfg_attr(feature = "serde", serde(rename = "string"))]
     String(StringValidator),
     #[cfg_attr(feature = "serde", serde(rename = "object"))]
@@ -80,15 +82,83 @@ pub enum Validator {
     Any(AnyValidator),
 }
 
-impl Validator {
-    pub fn validate(&self, value: &Value) -> Result<(), Error> {
+#[cfg_attr(feature = "serde", typetag::serde(name = "typed"))]
+impl Validation for Validator {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn validate(&self, value: &Value) -> Result<(), Error> {
         match self {
+            Validator::Bool(b) => b.validate(value),
             Validator::String(s) => s.validate(value),
             Validator::Number(n) => n.validate(value),
             Validator::Object(o) => o.validate(value),
             Validator::List(l) => l.validate(value),
             Validator::Any(a) => a.validate(value),
         }
+    }
+}
+
+/*
+    Bool Validator
+*/
+
+pub fn bool() -> BoolValidator {
+    BoolValidator::default()
+}
+
+#[cfg_attr(
+    feature = "serde",
+    derive(serde_lib::Serialize, serde_lib::Deserialize)
+)]
+#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[derive(Default, Debug)]
+pub struct BoolValidator {
+    #[cfg_attr(
+        feature = "serde",
+        serde(rename = "validations", skip_serializing_if = "Vec::is_empty")
+    )]
+    vals: Vec<ValidationBox>,
+    #[cfg_attr(
+        feature = "serde",
+        serde(rename = "description", skip_serializing_if = "Option::is_none")
+    )]
+    desc: Option<String>,
+}
+
+#[cfg_attr(feature = "serde", typetag::serde(name = "string"))]
+impl Validation for BoolValidator {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn validate(&self, value: &Value) -> Result<(), Error> {
+        if value.ty() != ValueType::String && value.ty() != ValueType::None {
+            panic!("type");
+        }
+        let mut errors = Vec::default();
+
+        for v in &self.vals {
+            if let Err(err) = v.validate(value) {
+                errors.push(err);
+            }
+        }
+
+        if !errors.is_empty() {
+            return Err(Error::Multi(errors));
+        }
+        Ok(())
+    }
+}
+
+impl ValidatorBuilder for BoolValidator {
+    fn add_validation(&mut self, validation: ValidationBox) {
+        self.vals.push(validation);
+    }
+}
+
+impl From<BoolValidator> for Validator {
+    fn from(s: BoolValidator) -> Self {
+        Validator::Bool(s)
     }
 }
 
@@ -178,6 +248,11 @@ pub struct ObjectValidator {
         serde(rename = "description", skip_serializing_if = "Option::is_none")
     )]
     desc: Option<String>,
+    #[cfg_attr(
+        feature = "serde",
+        serde(rename = "validations", skip_serializing_if = "Vec::is_empty")
+    )]
+    vals: Vec<ValidationBox>,
 }
 
 impl ObjectValidator {
@@ -231,6 +306,12 @@ impl From<ObjectValidator> for Validator {
     }
 }
 
+impl ValidatorBuilder for ObjectValidator {
+    fn add_validation(&mut self, validation: ValidationBox) {
+        self.vals.push(validation);
+    }
+}
+
 /**
  * Number Validator
  */
@@ -279,6 +360,13 @@ impl Validation for NumberValidator {
             return Err(Error::Multi(errors));
         }
         Ok(())
+    }
+}
+
+impl NumberValidator {
+    pub fn kind(mut self, kind: NumberType) -> Self {
+        self.add_validation(Box::new(validation::number_kind(kind)));
+        self
     }
 }
 
@@ -408,7 +496,7 @@ impl From<AnyValidator> for Validator {
     }
 }
 
-#[cfg_attr(feature = "serde", typetag::serde(name = "list"))]
+#[cfg_attr(feature = "serde", typetag::serde(name = "any"))]
 impl Validation for AnyValidator {
     fn as_any(&self) -> &dyn Any {
         self

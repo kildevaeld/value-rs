@@ -1,5 +1,9 @@
-use crate::{Validation, ValidationBox};
+use crate::{Validation, ValidationBox, Validator};
 use alloc::{boxed::Box, vec, vec::Vec};
+
+pub trait Validatable {
+    fn validator() -> Validator;
+}
 
 pub trait ValidationList {
     fn into_list(self) -> Vec<ValidationBox>;

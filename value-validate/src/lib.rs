@@ -4,11 +4,20 @@ extern crate alloc;
 
 mod error;
 mod types;
+mod validatable_impl;
+
 pub mod validation;
 pub mod validator;
 
+#[cfg(feature = "derive")]
+pub use value_macros::*;
+
 pub use self::{
     error::*,
-    validation::{equal, max, min, required, tuple, Validation, ValidationBox},
+    types::Validatable,
+    validation::{
+        equal, item, max, min, number_kind, required, tuple, Validation, ValidationBox,
+        ValidationExt,
+    },
     validator::*,
 };

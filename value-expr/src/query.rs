@@ -3,9 +3,6 @@ use value::Value;
 use super::builder::Expression;
 use super::expr::Expr;
 
-#[cfg(feature = "parser")]
-use super::parser;
-
 #[derive(Clone, PartialEq, Debug)]
 pub enum Ordering {
     Asc(String),
@@ -20,7 +17,7 @@ pub enum Filter<S> {
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Query<S> {
-    pub filter: Option<Filter<S>>,
+    pub filter: Option<Expr<S>>,
     pub limit: Option<u64>,
     pub offset: Option<u64>,
     pub columns: Option<Vec<S>>,
@@ -42,14 +39,7 @@ impl<S> Default for Query<S> {
 impl<S> Query<S> {
     pub fn new<E: Expression<S>>(filter: E) -> Query<S> {
         Query {
-            filter: Some(Filter::Expr(filter.to_ast())),
-            ..Default::default()
-        }
-    }
-
-    pub fn id(value: impl Into<Value>) -> Query<S> {
-        Query {
-            filter: Some(Filter::Id(value.into())),
+            filter: Some(filter.to_ast()),
             ..Default::default()
         }
     }

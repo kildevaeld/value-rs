@@ -1,51 +1,34 @@
-use std::any::TypeId;
-use std::collections::BTreeMap;
-use std::collections::HashMap;
+use crate::error::Error;
+use serde::{Deserialize, Serialize};
 use std::future::Future;
 use std::pin::Pin;
-
-use crate::error::Error;
-use value::{Value, ValueType};
+use value::Value;
 use value_validate::Error as ValidationError;
-use value_validate::TypedValidator;
+use value_validate::Validator;
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 pub type BoxError = Box<dyn std::error::Error + Send + Sync>;
-// #[cfg_attr(
-//     feature = "serde",
-//     derive(serde_lib::Serialize, serde_lib::Deserialize)
-// )]
-// #[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
-// #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-// pub enum ParameterKind {
-//     Value(ValueType),
-//     Struct(BTreeMap<String, ParameterKind>),
-//     Vec(Box<ParameterKind>),
-// }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
-#[derive(Debug)]
+pub fn box_error<E: std::error::Error + Send + Sync + 'static>(error: E) -> BoxError {
+    Box::new(error)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Parameter {
-    kind: TypedValidator,
-    name: String,
+    kind: Validator,
     default: Option<Value>,
 }
 
 impl Parameter {
-    pub fn new(name: impl ToString, kind: TypedValidator) -> Parameter {
+    pub fn new(kind: impl Into<Validator>) -> Parameter {
         Parameter {
-            kind: kind,
-            name: name.to_string(),
+            kind: kind.into(),
             default: None,
         }
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, Deserialize, Serialize)]
 pub struct Parameters {
     params: Vec<Parameter>,
 }
@@ -63,23 +46,22 @@ impl Parameters {
     }
 }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Arguments {
-    args: HashMap<String, Value>,
+    args: Vec<Value>,
 }
 
 impl Arguments {
-    #[cfg(feature = "serde")]
-    pub fn try_get<'de, T: serde_lib::de::Deserialize<'de>>(self, name: &str) -> Result<T, Error> {
-        if let Some(found) = self.args.get(name) {
-            found.clone().try_into()?
+    pub fn empty() -> Arguments {
+        Arguments {
+            args: Vec::default(),
+        }
+    }
+    pub fn try_get<'de, T: Deserialize<'de>>(&self, idx: usize) -> Result<T, Error> {
+        if let Some(found) = self.args.get(idx) {
+            Ok(found.clone().try_into::<T>().unwrap())
         } else {
-            panic!("")
+            panic!("could not index: {}", idx);
         }
     }
 }

@@ -12,7 +12,12 @@ fn main() {
                 .max(100),
         )
         .field("age", number().min(18).max(100).required())
-        .field("list", list().and(tuple((string(), object()))).required());
+        .field(
+            "list",
+            list()
+                .and(tuple((string(), object().and(item(string())))))
+                .required(),
+        );
 
     // let o: Validator = any_of(vec![o.into(), number().into()]).into();
     // let o: ValidationBox = Box::new(o);

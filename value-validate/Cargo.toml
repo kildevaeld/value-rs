@@ -7,14 +7,18 @@ version = "0.1.0"
 
 [dependencies]
 sealed = "0.3"
+value = {path = "../value"}
+
 serde_lib = {version = "1", default-features = false, features = ["derive", "alloc"], package = "serde", optional = true}
 typetag = {version = "0.1", optional = true}
-value = {path = "../value"}
+
+value-macros = {path = "../value-macros", optional = true}
 
 [dev-dependencies]
 serde_json = "1"
 
 [features]
-default = ["serde"]
+default = []
+derive = ["value-macros"]
 serde = ["typetag", "value/serde", "serde_lib", "std"]
 std = []

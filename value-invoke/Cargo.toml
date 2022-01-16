@@ -8,10 +8,11 @@ version = "0.1.0"
 [dependencies]
 async-trait = "0.1"
 futures-core = {version = "0.3"}
-serde_lib = {version = "1", default-features = false, features = ["alloc", "derive"], package = "serde", optional = true}
-value = {path = "../value"}
-value-validate = {path = "../value-validate", features = ["std"]}
+serde = {version = "1", default-features = false, features = ["alloc", "derive"]}
+thiserror = "1"
+value = {path = "../value", features = ["serde", "std"]}
+value-validate = {path = "../value-validate", features = ["std", "serde", "derive"]}
 
-[features]
-default = ["serde"]
-serde = ["serde_lib", "value/serde", "value-validate/serde"]
+[dev-dependencies]
+serde_json = "1"
+smol = "1"

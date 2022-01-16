@@ -1,8 +1,8 @@
-use crate::{error::Error, types::ValidationList};
+use crate::{error::Error, types::ValidationList, Validator};
 use alloc::{boxed::Box, vec::Vec};
 use core::any::Any;
 use core::fmt::Debug;
-use value::{Value, ValueType};
+use value::{NumberType, Value, ValueType};
 
 pub type ValidationBox = Box<dyn Validation>;
 
@@ -11,6 +11,17 @@ pub trait Validation: Send + Sync + Debug {
     fn as_any(&self) -> &dyn Any;
     fn validate(&self, value: &Value) -> Result<(), Error>;
 }
+
+pub trait ValidationExt: Validation {
+    fn boxed(self) -> ValidationBox
+    where
+        Self: Sized + 'static,
+    {
+        Box::new(self)
+    }
+}
+
+impl<V> ValidationExt for V where V: Validation {}
 
 /**
  * Required
@@ -195,11 +206,59 @@ impl Validation for OneOf {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    fn validate(&self, value: &Value) -> Result<(), Error> {
+    fn validate(&self, _: &Value) -> Result<(), Error> {
         Ok(())
     }
 }
 
 pub fn one_of<V: ValidationList>(value: V) -> OneOf {
     OneOf(value.into_list())
+}
+
+#[cfg_attr(
+    feature = "serde",
+    derive(serde_lib::Serialize, serde_lib::Deserialize)
+)]
+#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[derive(Debug)]
+pub struct Item {
+    validator: Validator,
+}
+
+#[cfg_attr(feature = "serde", typetag::serde(name = "item"))]
+impl Validation for Item {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn validate(&self, _: &Value) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+pub fn item<V: Into<Validator>>(value: V) -> Item {
+    Item {
+        validator: value.into(),
+    }
+}
+
+#[cfg_attr(
+    feature = "serde",
+    derive(serde_lib::Serialize, serde_lib::Deserialize)
+)]
+#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[derive(Debug)]
+pub struct NumberSize(pub NumberType);
+
+#[cfg_attr(feature = "serde", typetag::serde(name = "item"))]
+impl Validation for NumberSize {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn validate(&self, _: &Value) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+pub fn number_kind(kind: NumberType) -> NumberSize {
+    NumberSize(kind)
 }

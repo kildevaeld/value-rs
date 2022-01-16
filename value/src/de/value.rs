@@ -45,6 +45,7 @@ pub(crate) fn unexpected(value: &Value) -> serde_lib::de::Unexpected {
         Value::List(_) => serde_lib::de::Unexpected::Seq,
         Value::Map(_) => serde_lib::de::Unexpected::Map,
         Value::Bytes(ref b) => serde_lib::de::Unexpected::Bytes(b),
+        #[allow(unreachable_patterns)]
         _ => serde_lib::de::Unexpected::Map,
     }
 }
