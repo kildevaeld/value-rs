@@ -1,112 +1,51 @@
-use core::fmt;
-
-use alloc::{boxed::Box, collections::BTreeMap, vec::Vec};
-
+use crate::{error::Error, types::ValidationList};
+use alloc::{boxed::Box, vec::Vec};
+use core::any::Any;
+use core::fmt::Debug;
 use value::{Value, ValueType};
 
-use crate::error::Error;
+pub type ValidationBox = Box<dyn Validation>;
 
-#[cfg_attr(feature = "serde", typetag::serde(tag = "$type"))]
-pub trait Validation: Send + Sync + fmt::Debug {
+#[cfg_attr(feature = "serde", typetag::serde(tag = "type"))]
+pub trait Validation: Send + Sync + Debug {
+    fn as_any(&self) -> &dyn Any;
     fn validate(&self, value: &Value) -> Result<(), Error>;
 }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
-#[derive(Default, Debug)]
-pub struct Alt(Vec<TypedValidator>);
-
-impl Alt {
-    pub fn or(mut self, v: TypedValidator) -> Self {
-        self.0.push(v);
-        self
-    }
-}
-
-#[cfg_attr(feature = "serde", typetag::serde)]
-impl Validation for Alt {
-    fn validate(&self, value: &Value) -> Result<(), Error> {
-        let mut errors = Vec::default();
-        for validator in &self.0 {
-            if let Err(err) = validator.validate(value) {
-                errors.push(err)
-            } else {
-                return Ok(());
-            }
-        }
-
-        if errors.is_empty() {
-            Ok(())
-        } else {
-            Err(Error::Multi(errors))
-        }
-    }
-}
-
-// Implem
+/**
+ * Required
+ */
 
 #[cfg_attr(
     feature = "serde",
     derive(serde_lib::Serialize, serde_lib::Deserialize)
 )]
 #[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
-#[derive(Debug)]
-pub struct TypedValidator {
-    #[cfg_attr(feature = "serde", serde(rename = "$type"))]
-    ty: ValueType,
-    validators: Vec<Box<dyn Validation>>,
-}
+#[derive(Debug, Clone)]
+pub struct Required;
 
-impl TypedValidator {
-    pub fn new(ty: ValueType) -> TypedValidator {
-        TypedValidator {
-            ty,
-            validators: Vec::default(),
-        }
-    }
-    pub fn ty(&self) -> ValueType {
-        self.ty
-    }
-
-    pub fn and<V: Validation + 'static>(mut self, val: V) -> Self {
-        self.validators.push(Box::new(val));
+#[cfg_attr(feature = "serde", typetag::serde(name = "required"))]
+impl Validation for Required {
+    fn as_any(&self) -> &dyn Any {
         self
     }
-
-    pub fn push<V: Validation + 'static>(&mut self, val: V) -> &mut Self {
-        self.validators.push(Box::new(val));
-        self
-    }
-}
-
-#[cfg_attr(feature = "serde", typetag::serde(name = "type"))]
-impl Validation for TypedValidator {
     fn validate(&self, value: &Value) -> Result<(), Error> {
-        let mut errors = Vec::default();
-        if value.ty() != self.ty
-            && value.ty() != ValueType::None
-            && !(value.is_number() && self.ty.is_number())
-        {
-            errors.push(Error::InvalidType {
-                expected: self.ty,
-                found: value.ty(),
-            });
+        if value.is_none() {
+            return Err(Error::Required);
         }
-
-        for validator in &self.validators {
-            validator.validate(value)?;
-        }
-
-        if errors.is_empty() {
-            Ok(())
-        } else {
-            Err(Error::Multi(errors))
-        }
+        Ok(())
     }
 }
+
+pub fn required() -> Required {
+    Required
+}
+
+/**
+ *
+ * Min
+ *
+ */
 
 #[cfg_attr(
     feature = "serde",
@@ -116,9 +55,23 @@ impl Validation for TypedValidator {
 #[derive(Debug, Clone, Copy)]
 pub struct Min(usize);
 
-#[cfg_attr(feature = "serde", typetag::serde)]
+#[cfg_attr(feature = "serde", typetag::serde(name = "min"))]
 impl Validation for Min {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
     fn validate(&self, value: &Value) -> Result<(), Error> {
+        let ret = match value {
+            Value::String(str) => str.len() >= self.0,
+            Value::Number(n) => (n.as_u64() as usize) >= self.0,
+            Value::Bytes(bs) => bs.len() >= self.0,
+            _ => false,
+        };
+
+        if !ret {
+            return Err(Error::Min { min: self.0 });
+        }
+
         Ok(())
     }
 }
@@ -135,9 +88,22 @@ pub fn min(v: usize) -> Min {
 #[derive(Debug, Clone, Copy)]
 pub struct Max(usize);
 
-#[cfg_attr(feature = "serde", typetag::serde)]
+#[cfg_attr(feature = "serde", typetag::serde(name = "max"))]
 impl Validation for Max {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
     fn validate(&self, value: &Value) -> Result<(), Error> {
+        let ret = match value {
+            Value::String(str) => str.len() <= self.0,
+            Value::Number(n) => (n.as_u64() as usize) <= self.0,
+            Value::Bytes(bs) => bs.len() <= self.0,
+            _ => false,
+        };
+
+        if !ret {
+            return Err(Error::Min { min: self.0 });
+        }
         Ok(())
     }
 }
@@ -152,20 +118,88 @@ pub fn max(v: usize) -> Max {
 )]
 #[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
 #[derive(Debug, Clone)]
-pub struct OneOf(Vec<Value>);
+pub struct Equal(pub Value);
 
-#[cfg_attr(feature = "serde", typetag::serde)]
-impl Validation for OneOf {
+#[cfg_attr(feature = "serde", typetag::serde(name = "equal"))]
+impl Validation for Equal {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
     fn validate(&self, value: &Value) -> Result<(), Error> {
-        for one in &self.0 {
-            if value == one {
-                return Ok(());
-            }
+        if &self.0 != value {
+            return Err(Error::Equal);
         }
         Ok(())
     }
 }
 
-pub fn oneof(v: Vec<Value>) -> OneOf {
-    OneOf(v)
+pub fn equal<V: Into<Value>>(value: V) -> Equal {
+    Equal(value.into())
+}
+
+#[cfg_attr(
+    feature = "serde",
+    derive(serde_lib::Serialize, serde_lib::Deserialize)
+)]
+#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[derive(Debug)]
+pub struct Tuple(pub Vec<ValidationBox>);
+
+#[cfg_attr(feature = "serde", typetag::serde(name = "tuple"))]
+impl Validation for Tuple {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn validate(&self, value: &Value) -> Result<(), Error> {
+        let list = match value.as_list() {
+            Some(list) => list,
+            None => {
+                return Err(Error::InvalidType {
+                    expected: ValueType::List,
+                    found: value.ty(),
+                })
+            }
+        };
+
+        if list.len() != self.0.len() {
+            panic!("not equal len");
+        }
+
+        let values = self.0.iter().zip(list.iter());
+
+        let mut errors = Vec::default();
+        for (idx, (validation, value)) in values.enumerate() {
+            if let Err(err) = validation.validate(value) {
+                errors.push((idx, err));
+            }
+        }
+
+        Ok(())
+    }
+}
+
+pub fn tuple<V: ValidationList>(value: V) -> Tuple {
+    Tuple(value.into_list())
+}
+
+#[cfg_attr(
+    feature = "serde",
+    derive(serde_lib::Serialize, serde_lib::Deserialize)
+)]
+#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[derive(Debug)]
+pub struct OneOf(pub Vec<ValidationBox>);
+
+#[cfg_attr(feature = "serde", typetag::serde(name = "one_of"))]
+impl Validation for OneOf {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn validate(&self, value: &Value) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+pub fn one_of<V: ValidationList>(value: V) -> OneOf {
+    OneOf(value.into_list())
 }

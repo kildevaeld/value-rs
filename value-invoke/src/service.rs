@@ -1,6 +1,11 @@
 use std::{collections::BTreeMap, future::Future, pin::Pin};
 
-use crate::types::{Arguments, Parameters};
+use value::Value;
+
+use crate::{
+    error::Error,
+    types::{Arguments, BoxError, BoxFuture, Parameters},
+};
 
 // use async_trait::async_trait;
 // pub trait Command {
@@ -10,26 +15,69 @@ use crate::types::{Arguments, Parameters};
 // }
 
 pub trait Action: Send + Sync {
-    type Future: Future + Send;
+    type Error;
+    type Future: Future<Output = Result<Value, Self::Error>> + Send;
+
+    fn parameters(&self) -> &Parameters;
+
     fn call(&self, args: Arguments) -> Self::Future;
 }
 
-pub struct Command {
-    action: Box<dyn Action<Future = Pin<Box<dyn Future<Output = ()> + Send>>>>,
-    params: Parameters,
+pub type ActionBox =
+    Box<dyn Action<Error = BoxError, Future = BoxFuture<'static, Result<Value, BoxError>>>>;
+
+struct ActionBoxImpl<A> {
+    action: A,
 }
 
-impl Command {
-    pub fn call<'a>(&'a self, args: Arguments) -> impl Future + 'a {
-        async move {
+impl<A> Action for ActionBoxImpl<A>
+where
+    A: Action,
+    A::Future: Send + 'static,
+    A::Error: std::error::Error + Send + Sync + 'static,
+{
+    type Error = BoxError;
+    type Future = BoxFuture<'static, Result<Value, Self::Error>>;
+
+    fn parameters(&self) -> &Parameters {
+        self.action.parameters()
+    }
+
+    fn call(&self, args: Arguments) -> Self::Future {
+        let future = self.action.call(args);
+        Box::pin(async move {
             //
-            self.action.call(args).await
-        }
+            match future.await {
+                Ok(ret) => Ok(ret),
+                Err(err) => Err(box_error(err)),
+            }
+        })
     }
 }
 
+fn box_error<E: std::error::Error + Send + Sync + 'static>(error: E) -> BoxError {
+    Box::new(error)
+}
+
+// pub struct Command {
+//     action: Box<dyn Action<Future = Pin<Box<dyn Future<Output = ()> + Send>>>>,
+//     params: Parameters,
+// }
+
+// impl Command {
+//     pub fn call<'a>(&'a self, args: Arguments) -> impl Future + 'a {
+//         async move {
+//             //
+
+//             self.params.validate(&args)?
+
+//             self.action.call(args).await
+//         }
+//     }
+// }
+
 pub struct Service {
-    cmds: BTreeMap<String, Command>,
+    cmds: BTreeMap<String, ActionBox>,
 }
 
 impl Service {

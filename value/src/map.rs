@@ -32,7 +32,7 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn with_capacity(size: usize) -> Map {
+    pub fn with_capacity(_: usize) -> Map {
         Map {
             inner: BTreeMap::default(),
         }

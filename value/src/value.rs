@@ -25,7 +25,7 @@ use serde_lib::de::Deserialize;
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub enum ValueType {
     Bool,
-    Number(NumberType),
+    Number,
     Char,
     String,
     List,
@@ -46,11 +46,11 @@ impl ValueType {
         }
 
         match (*self, *ty) {
-            (Number(_), Number(_) | String | Bool | Char) => true,
+            (Number, Number | String | Bool | Char) => true,
             #[cfg(feature = "datetime")]
             (DateTime | Date, Date | DateTime | String) => true,
-            (Bool, Number(_) | String | Char) => true,
-            (Char, Bool | Number(_) | String) => true,
+            (Bool, Number | String | Char) => true,
+            (Char, Bool | Number | String) => true,
             (Map | List | String, Bool) => true,
             (String, Bytes) => true,
             (Map, List) => true,
@@ -61,7 +61,7 @@ impl ValueType {
 
     pub fn is_number(&self) -> bool {
         match self {
-            ValueType::Number(_) => true,
+            ValueType::Number => true,
             _ => false,
         }
     }
@@ -136,7 +136,7 @@ impl Value {
     pub fn ty(&self) -> ValueType {
         match self {
             Value::Bool(_) => ValueType::Bool,
-            Value::Number(n) => ValueType::Number(n.ty()),
+            Value::Number(_) => ValueType::Number,
             Value::Char(_) => ValueType::Char,
             Value::String(_) => ValueType::String,
             Value::None => ValueType::None,
@@ -168,7 +168,7 @@ impl Value {
         }
     }
 
-    // is_method!(is_number, Number(_));
+    // is_method!(is_number, Number);
     is_method!(is_string, String);
     is_method!(is_bytes, Bytes);
     is_method!(is_bool, Bool);
@@ -227,14 +227,14 @@ impl Value {
         }
 
         match (self, ty) {
-            (Value::Number(n), ValueType::Number(_)) => Some(Value::Number(n)),
+            (Value::Number(n), ValueType::Number) => Some(Value::Number(n)),
             (Value::Number(n), ValueType::String) => Some(Value::String(n.to_string())),
             (Value::Number(n), ValueType::Bool) => Some(Value::Bool(n.as_u8() != 0)),
             (Value::Number(n), ValueType::Char) => Some(Value::Char(n.as_u8() as char)),
             (Value::Bool(b), ValueType::String) => Some(Value::String(format!("{}", b))),
-            (Value::Bool(b), ValueType::Number(_)) => Some(Value::Number((b as u8).into())),
+            (Value::Bool(b), ValueType::Number) => Some(Value::Number((b as u8).into())),
             (Value::Bool(b), ValueType::Char) => Some(Value::Char((b as u8).into())),
-            (Value::Char(c), ValueType::Number(_)) => Some(Value::Number((c as u8).into())),
+            (Value::Char(c), ValueType::Number) => Some(Value::Number((c as u8).into())),
             (Value::Char(c), ValueType::String) => Some(Value::String(format!("{}", c))),
             (Value::Char(c), ValueType::Bool) => Some(Value::Bool(c as u8 != 0)),
             (Value::String(s), ValueType::Bool) => Some(Value::Bool(!s.is_empty())),

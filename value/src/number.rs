@@ -22,7 +22,6 @@ pub enum NumberType {
     I64,
     F32,
     F64,
-    Any,
 }
 
 #[cfg_attr(not(feature = "ordered_float"), derive(Debug, Clone, Copy, PartialOrd))]
@@ -52,7 +51,7 @@ pub enum Number {
 impl PartialEq for Number {
     fn eq(&self, other: &Self) -> bool {
         let ty = self.ty();
-        if ty == NumberType::F32 || ty == NumberType::F64 || ty == NumberType::Any {
+        if ty == NumberType::F32 || ty == NumberType::F64 {
             self.as_f64() == other.as_f64()
         } else {
             self.as_u64() == other.as_u64()
@@ -62,7 +61,7 @@ impl PartialEq for Number {
 
 impl Typed for Number {
     fn typed() -> crate::ValueType {
-        crate::ValueType::Number(NumberType::Any)
+        crate::ValueType::Number
     }
 }
 

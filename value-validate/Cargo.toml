@@ -6,8 +6,8 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+sealed = "0.3"
 serde_lib = {version = "1", default-features = false, features = ["derive", "alloc"], package = "serde", optional = true}
-thiserror = {version = "1"}
 typetag = {version = "0.1", optional = true}
 value = {path = "../value"}
 
@@ -15,5 +15,6 @@ value = {path = "../value"}
 serde_json = "1"
 
 [features]
-default = []
-serde = ["typetag", "value/serde", "serde_lib"]
+default = ["serde"]
+serde = ["typetag", "value/serde", "serde_lib", "std"]
+std = []

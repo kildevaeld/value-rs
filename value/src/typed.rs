@@ -3,7 +3,7 @@ use alloc::{collections::BTreeMap, string::String, vec::Vec};
 #[cfg(feature = "std")]
 use std::collections::BTreeMap;
 
-use crate::{Map, NumberType, Value, ValueType};
+use crate::{Map, Value, ValueType};
 
 pub trait Typed {
     fn typed() -> ValueType;
@@ -20,7 +20,7 @@ macro_rules! ty_impl {
     ($name: ty, number $ty: ident) => {
         impl Typed for $name {
             fn typed() -> ValueType {
-                ValueType::Number(NumberType::$ty)
+                ValueType::Number
             }
         }
     };
