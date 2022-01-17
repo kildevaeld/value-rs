@@ -1,4 +1,8 @@
-use crate::{error::Error, types::ValidationList, Validator};
+use crate::{
+    error::{self, Error},
+    types::ValidationList,
+    Validator,
+};
 use alloc::{boxed::Box, vec::Vec};
 use core::any::Any;
 use core::fmt::Debug;
@@ -206,7 +210,21 @@ impl Validation for OneOf {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    fn validate(&self, _: &Value) -> Result<(), Error> {
+    fn validate(&self, v: &Value) -> Result<(), Error> {
+        let mut errors = Vec::default();
+
+        for val in &self.0 {
+            if let Err(err) = val.validate(v) {
+                errors.push(err)
+            } else {
+                return Ok(());
+            }
+        }
+
+        if !errors.is_empty() {
+            return Err(Error::Multi(errors));
+        }
+
         Ok(())
     }
 }

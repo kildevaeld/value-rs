@@ -280,6 +280,12 @@ impl Validation for ObjectValidator {
 
         let mut errors = Vec::default();
 
+        for v in &self.vals {
+            if let Err(err) = v.validate(value) {
+                errors.push(err);
+            }
+        }
+
         for (k, validator) in self.fields.iter() {
             let val = &map[k];
 
