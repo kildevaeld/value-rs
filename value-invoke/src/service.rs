@@ -1,21 +1,32 @@
 use std::collections::BTreeMap;
-
-use serde::Deserialize;
 use value::Value;
 
 use crate::{
     action::{action_box, Action, ActionBox},
     into_args::IntoArguments,
-    types::{BoxError, Parameter, Parameters},
+    types::Parameters,
+    ActionError, Arguments, Error,
 };
 
-#[derive(serde::Serialize)]
-pub struct Command<'a> {
-    #[serde(borrow)]
-    name: &'a str,
-    #[serde(borrow)]
-    parameters: &'a Parameters,
+pub trait IntoService {
+    type Service: Service;
+    fn into_service(self) -> Self::Service;
 }
+
+#[async_trait::async_trait]
+pub trait Service {
+    fn interface(&self) -> &[Interface];
+    async fn call_method(&self, name: &str, args: Arguments) -> Result<Value, Error>;
+}
+
+#[async_trait::async_trait]
+pub trait ServiceExt: Service {
+    async fn call<A: IntoArguments + Send>(&self, name: &str, args: A) -> Result<Value, Error> {
+        self.call_method(name, args.into_arguments()?).await
+    }
+}
+
+impl<S> ServiceExt for S where S: Service {}
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Interface {
@@ -24,11 +35,11 @@ pub struct Interface {
 }
 
 #[derive(Default)]
-pub struct Service {
+pub struct ServiceBuilder {
     cmds: BTreeMap<String, ActionBox>,
 }
 
-impl Service {
+impl ServiceBuilder {
     pub fn register<A: Action>(&mut self, name: impl Into<String>, action: A)
     where
         A: 'static + Send + Sync,
@@ -43,27 +54,54 @@ impl Service {
     }
 }
 
-impl Service {
-    pub async fn call(
-        &self,
-        method: impl AsRef<str>,
-        args: impl IntoArguments,
-    ) -> Result<Value, BoxError> {
-        let cmd = match self.cmds.get(method.as_ref()) {
+impl IntoService for ServiceBuilder {
+    type Service = ServiceBuilderService;
+    fn into_service(self) -> Self::Service {
+        let i = self
+            .cmds
+            .iter()
+            .map(|(k, v)| Interface {
+                name: k.to_owned(),
+                parameters: v.parameters().clone(),
+            })
+            .collect();
+
+        ServiceBuilderService { cmds: self.cmds, i }
+    }
+}
+
+pub struct ServiceBuilderService {
+    cmds: BTreeMap<String, ActionBox>,
+    i: Vec<Interface>,
+}
+
+#[async_trait::async_trait]
+impl Service for ServiceBuilderService {
+    async fn call_method(&self, name: &str, args: Arguments) -> Result<Value, Error> {
+        let cmd = match self.cmds.get(name) {
             Some(s) => s,
-            None => panic!("not method"),
+            None => {
+                return Err(Error::CommandNotFound {
+                    command: name.to_owned(),
+                })
+            }
         };
 
-        cmd.call(args.into_arguments().map_err(Box::new)?).await
+        let ret = cmd
+            .call(args.into_arguments().map_err(|err| Error::Command {
+                command: name.to_owned(),
+                error: ActionError::Execution(Box::new(err)),
+            })?)
+            .await
+            .map_err(|err| Error::Command {
+                command: name.to_owned(),
+                error: ActionError::Execution(err),
+            })?;
+
+        Ok(ret)
     }
 
-    pub fn interface<'a>(&'a self) -> Vec<Command<'a>> {
-        self.cmds
-            .iter()
-            .map(|(k, v)| Command {
-                name: k,
-                parameters: v.parameters(),
-            })
-            .collect()
+    fn interface(&self) -> &[Interface] {
+        &self.i
     }
 }

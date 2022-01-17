@@ -1,3 +1,4 @@
+#[cfg(feature = "service")]
 mod service;
 mod validatable;
 
@@ -6,6 +7,7 @@ pub fn validatable_derive(input: proc_macro::TokenStream) -> proc_macro::TokenSt
     validatable::derive(input)
 }
 
+#[cfg(feature = "service")]
 #[proc_macro_attribute]
 pub fn service(
     attr: proc_macro::TokenStream,

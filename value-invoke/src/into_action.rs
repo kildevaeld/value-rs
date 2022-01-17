@@ -35,48 +35,6 @@ where
     }
 }
 
-//
-
-// pub struct ActionInto<F, A> {
-//     func: F,
-//     _a: PhantomData<A>,
-// }
-
-// macro_rules! action_impl {
-//     ($type:ident) => {
-//         impl<F, $type, U> Action for ActionInto<F, ($type,)>
-//         where
-//         F: Fn() -> U + Send + Sync + 'static,
-//         U: TryFuture + Send,
-//         U::Error: std::error::Error + Send + Sync + 'static,
-//         U::Ok: serde::Serialize,
-//         U: Future<Output = Result<U::Ok, U::Error>> + Send,
-//         {
-//             type Error = U::Error;
-//             type Future = BoxFuture<'static, Result<Value, Self::Error>>;
-
-//             fn parameters(&self) -> &Parameters {
-//                 let params = Parameters::default().add(Parameter::new($type::validator()));
-//                 params
-//             }
-
-//             fn call(&self, args: Arguments) -> Self::Future {
-//                 let future = self.action.call(args);
-//                 Box::pin(async move {
-//                     match future.await {
-//                         Ok(ret) => Ok(ret),
-//                         Err(err) => Err(box_error(err)),
-//                     }
-//                 })
-//             }
-//         }
-//     }
-//     ($type1:ident, $( $type:ident ),*) => {
-//         action_impl!($($type),*);
-
-//     };
-// }
-
 pub trait IntoAction<A> {
     type Action;
     fn action(self) -> Self::Action;

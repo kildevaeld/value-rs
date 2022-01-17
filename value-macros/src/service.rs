@@ -1,7 +1,8 @@
-use quote::quote;
-use syn::{parse_macro_input, FnArg, ImplItem, Item, ItemImpl};
+use quote::{format_ident, quote};
+use syn::{parse_macro_input, FnArg, ImplItem, Item, Type};
+
 pub fn parse(
-    attr: proc_macro::TokenStream,
+    _attr: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
     let input = parse_macro_input!(item as Item);
@@ -13,7 +14,6 @@ pub fn parse(
 
     let mut methods = Vec::default();
     let mut params = Vec::default();
-    // let mut cmds = Vec::default();
 
     for item in &input.items {
         let item =
@@ -80,7 +80,7 @@ pub fn parse(
                     quote! {
                        stringify!(#name) => {
                             #( #args )*;
-                            self.#name(#(#names),*).await
+                            self.service.#name(#(#names),*).await
                        }
                     }
 
@@ -101,25 +101,61 @@ pub fn parse(
 
     let name = &input.self_ty;
 
+    let service = if let Type::Path(next) = name.as_ref() {
+        let ident = next.path.get_ident().expect("ident");
+        format_ident!("{}ServiceImpl", ident)
+    } else {
+        panic!("");
+    };
+
+    // let service = format_ident!("{}_Service", name);
+
     let out = quote! {
         #input
 
-        impl #name {
+        impl value_invoke::IntoService for #name {
+            type Service = #service;
+            fn into_service(self) -> Self::Service {
 
-            pub fn interface(&self) -> Vec<value_invoke::Interface> {
-                vec![
+                let params = vec![
                     #(#params),*
-                ]
+                ];
+
+                #service {
+                    service: self,
+                    params
+                }
+            }
+        }
+
+        pub struct #service {
+            service: #name,
+            params: Vec<value_invoke::Interface>,
+        }
+
+        #[value_invoke::async_trait]
+        impl value_invoke::Service for #service {
+
+            fn interface(&self) -> &[value_invoke::Interface] {
+                &self.params
             }
 
-            pub async fn call<A: value_invoke::IntoArguments>(&self, name: &str, arguments: A) -> Result<value::Value, value_invoke::Error> {
-                //
-                let arguments = arguments.into_arguments().unwrap();
+            async fn call_method(&self, name: &str, arguments: value_invoke::Arguments) -> Result<value_invoke::value::Value, value_invoke::Error> {
+
+                let interface = match self.params.iter().find(|m| &m.name == name) {
+                    Some(p) => p,
+                    Nome => {
+                        panic!("method not found")
+                    }
+                };
+
+                interface.parameters.validate(&arguments).unwrap();
+
 
                 let ret = match name {
                     #(#methods),*,
                     _ => {
-                        panic!("invalid method");
+                        unreachable!()
                     }
 
                 };

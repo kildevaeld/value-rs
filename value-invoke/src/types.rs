@@ -2,6 +2,7 @@ use crate::error::Error;
 use serde::{Deserialize, Serialize};
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::Arc;
 use value::Value;
 use value_validate::Error as ValidationError;
 use value_validate::Validator;
@@ -28,14 +29,15 @@ impl Parameter {
     }
 }
 
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone)]
 pub struct Parameters {
-    params: Vec<Parameter>,
+    params: Arc<Vec<Parameter>>,
 }
 
 impl Parameters {
     pub fn add(mut self, param: Parameter) -> Self {
-        self.params.push(param);
+        let params = Arc::get_mut(&mut self.params).unwrap();
+        params.push(param);
         self
     }
 }

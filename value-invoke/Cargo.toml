@@ -8,10 +8,10 @@ version = "0.1.0"
 [dependencies]
 async-trait = "0.1"
 futures-core = {version = "0.3"}
-serde = {version = "1", default-features = false, features = ["alloc", "derive"]}
+serde = {version = "1", default-features = false, features = ["alloc", "derive", "rc"]}
 thiserror = "1"
 value = {path = "../value", features = ["serde", "std"]}
-value-macros = {path = "../value-macros"}
+value-macros = {path = "../value-macros", features = ["service"]}
 value-validate = {path = "../value-validate", features = ["std", "serde", "derive"]}
 
 [dev-dependencies]

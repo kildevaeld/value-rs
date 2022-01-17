@@ -1,9 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
 use syn::spanned::Spanned;
-use syn::{
-    parse_macro_input, parse_quote, Data, DeriveInput, Fields, GenericParam, Generics, Index, Type,
-};
+use syn::{parse_macro_input, parse_quote, Data, DeriveInput, Fields, GenericParam, Generics};
 
 pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -60,7 +58,7 @@ fn create_validation(data: &Data) -> TokenStream {
                     }
                 }
                 Fields::Unnamed(ref fields) => {
-                    let recurse = fields.unnamed.iter().enumerate().map(|(i, f)| {
+                    let recurse = fields.unnamed.iter().enumerate().map(|(_, f)| {
                         // let index = Index::from(i);
                         let ty = &f.ty;
                         quote_spanned! {f.span()=>

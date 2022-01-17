@@ -2,6 +2,8 @@ use thiserror::Error as ThisError;
 use value::{de::DeserializerError, ser::SerializerError};
 use value_validate::Error as ValidationError;
 
+use crate::types::BoxError;
+
 #[derive(Debug, ThisError)]
 pub enum Error {
     #[error("command returned error: ")]
@@ -18,4 +20,6 @@ pub enum Error {
 pub enum ActionError {
     #[error("validation error")]
     Validation(#[from] ValidationError),
+    #[error("execution")]
+    Execution(BoxError),
 }

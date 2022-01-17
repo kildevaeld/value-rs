@@ -1,6 +1,6 @@
 use core::fmt;
 
-use value_invoke::{service, IntoAction, IntoArguments, Service};
+use value_invoke::{prelude::*, service};
 use value_validate::Validatable;
 
 #[derive(Debug)]
@@ -23,16 +23,16 @@ pub struct TestService;
 
 #[service]
 impl TestService {
-    async fn run(&self, arg: String, age: u32) -> Result<(), Error> {
+    async fn run(&self, arg: String, _age: u32) -> Result<(), Error> {
         println!("{}", arg);
         Ok(())
     }
 
-    #[service(unblock = smol::unblock)]
-    fn test(&self, arg: String, age: u32) -> Result<(), Error> {
-        println!("{}", arg);
-        Ok(())
-    }
+    // #[service(unblock = smol::unblock)]
+    // fn test(&self, arg: String, _age: u32) -> Result<(), Error> {
+    //     println!("{}", arg);
+    //     Ok(())
+    // }
 }
 
 #[derive(Validatable, serde::Serialize, serde::Deserialize)]
@@ -70,9 +70,7 @@ fn main() {
 
         // println!("VALUES {:?}", ret);
 
-        let service = TestService;
-
-        println!("ARGS {:#?}", service.interface());
+        let service = TestService.into_service();
 
         service.call("run", ("Hello", 20)).await;
     });
