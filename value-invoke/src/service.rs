@@ -6,7 +6,7 @@ use value::Value;
 use crate::{
     action::{action_box, Action, ActionBox},
     into_args::IntoArguments,
-    types::{BoxError, Parameters},
+    types::{BoxError, Parameter, Parameters},
 };
 
 #[derive(serde::Serialize)]
@@ -15,6 +15,12 @@ pub struct Command<'a> {
     name: &'a str,
     #[serde(borrow)]
     parameters: &'a Parameters,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct Interface {
+    pub name: String,
+    pub parameters: Parameters,
 }
 
 #[derive(Default)]

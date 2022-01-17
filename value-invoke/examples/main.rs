@@ -1,7 +1,6 @@
 use core::fmt;
 
-use value::{to_value, Value};
-use value_invoke::{Arguments, IntoAction, Service};
+use value_invoke::{service, IntoAction, IntoArguments, Service};
 use value_validate::Validatable;
 
 #[derive(Debug)]
@@ -9,7 +8,7 @@ use value_validate::Validatable;
 pub struct Error;
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Ok(())
     }
 }
@@ -20,39 +19,61 @@ struct Test {
     age: u8,
 }
 
+pub struct TestService;
+
+#[service]
+impl TestService {
+    async fn run(&self, arg: String, age: u32) -> Result<(), Error> {
+        println!("{}", arg);
+        Ok(())
+    }
+
+    #[service(unblock = smol::unblock)]
+    fn test(&self, arg: String, age: u32) -> Result<(), Error> {
+        println!("{}", arg);
+        Ok(())
+    }
+}
+
 #[derive(Validatable, serde::Serialize, serde::Deserialize)]
 struct Test2(String);
 
 impl std::error::Error for Error {}
 
-async fn test(arg: String, arg2: Test, args: Vec<String>) -> Result<String, Error> {
+async fn test(_arg: String, arg2: Test, _args: Vec<String>) -> Result<String, Error> {
     Ok(format!("Hello, {}", arg2.name))
 }
 
 fn main() {
     smol::block_on(async {
         //
-        let mut service = Service::default();
+        // let mut service = Service::default();
 
-        service.register_box("test", test.action());
+        // service.register_box("test", test.action());
 
-        let ret = serde_json::to_string_pretty(&service.interface()).unwrap();
+        // let _ret = serde_json::to_string_pretty(&service.interface()).unwrap();
 
-        let ret = service
-            .call(
-                "test",
-                (
-                    "hello",
-                    Test {
-                        name: "Rasmys".to_owned(),
-                        age: 18,
-                    },
-                    vec!["Hello"],
-                    "Hello2",
-                ),
-            )
-            .await;
+        // let ret = service
+        //     .call(
+        //         "test",
+        //         (
+        //             "hello",
+        //             Test {
+        //                 name: "Rasmys".to_owned(),
+        //                 age: 18,
+        //             },
+        //             vec!["Hello"],
+        //             "Hello2",
+        //         ),
+        //     )
+        //     .await;
 
-        println!("VALUES {:?}", ret);
+        // println!("VALUES {:?}", ret);
+
+        let service = TestService;
+
+        println!("ARGS {:#?}", service.interface());
+
+        service.call("run", ("Hello", 20)).await;
     });
 }

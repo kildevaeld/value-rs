@@ -10,7 +10,7 @@ pub mod validation;
 pub mod validator;
 
 #[cfg(feature = "derive")]
-pub use value_macros::*;
+pub use value_macros::Validatable;
 
 pub use self::{
     error::*,

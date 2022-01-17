@@ -1,6 +1,6 @@
 // #![allow(non_snake_case)]
 
-use std::{future::Future, marker::PhantomData};
+use std::future::Future;
 
 use futures_core::TryFuture;
 use value::Value;

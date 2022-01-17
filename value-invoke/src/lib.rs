@@ -5,4 +5,12 @@ mod into_args;
 mod service;
 mod types;
 
-pub use self::{into_action::IntoAction, service::Service, types::Arguments};
+pub use value_macros::*;
+
+pub use self::{
+    error::*,
+    into_action::IntoAction,
+    into_args::IntoArguments,
+    service::{Interface, Service},
+    types::{Arguments, Parameter, Parameters},
+};

@@ -41,7 +41,7 @@ impl Parameters {
 }
 
 impl Parameters {
-    pub fn validate(&self, args: &Arguments) -> Result<(), ValidationError> {
+    pub fn validate(&self, _args: &Arguments) -> Result<(), ValidationError> {
         Ok(())
     }
 }
