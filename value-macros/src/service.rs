@@ -110,6 +110,8 @@ pub fn parse(
 
     // let service = format_ident!("{}_Service", name);
 
+    let param_len = params.len();
+
     let out = quote! {
         #input
 
@@ -117,7 +119,7 @@ pub fn parse(
             type Service = #service;
             fn into_service(self) -> Self::Service {
 
-                let params = vec![
+                let params: [value_invoke::Interface; #param_len] = [
                     #(#params),*
                 ];
 
@@ -130,7 +132,8 @@ pub fn parse(
 
         pub struct #service {
             service: #name,
-            params: Vec<value_invoke::Interface>,
+            params: [value_invoke::Interface; #param_len]
+            // params: Vec<value_invoke::Interface>,
         }
 
         #[value_invoke::async_trait]

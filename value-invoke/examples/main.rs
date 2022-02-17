@@ -45,7 +45,7 @@ async fn test(_arg: String, arg2: Test, _args: Vec<String>) -> Result<String, Er
 }
 
 fn main() {
-    smol::block_on(async {
+    futures_executor::block_on(async {
         //
         // let mut service = Service::default();
 

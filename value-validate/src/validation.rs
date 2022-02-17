@@ -1,8 +1,4 @@
-use crate::{
-    error::{self, Error},
-    types::ValidationList,
-    Validator,
-};
+use crate::{error::Error, types::ValidationList, Validator};
 use alloc::{boxed::Box, vec::Vec};
 use core::any::Any;
 use core::fmt::Debug;

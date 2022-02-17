@@ -15,5 +15,5 @@ value-macros = {path = "../value-macros", features = ["service"]}
 value-validate = {path = "../value-validate", features = ["std", "serde", "derive"]}
 
 [dev-dependencies]
+futures-executor = "0.3"
 serde_json = "1"
-smol = "1"
