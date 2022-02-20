@@ -9,4 +9,5 @@ version = "0.1.0"
 value = {path = "../value"}
 
 [features]
-default = []
+default = ["std"]
+std = ["value/std", "value/serde"]

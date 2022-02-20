@@ -13,8 +13,7 @@ impl TryCompare for Value {
 
 pub trait ExprVisitor<T> {
     type Output;
-    fn visit_logical_expr(&mut self, expr: &LogicalExpr<T>) -> Self::Output;
-    fn visit_relational_expr(&mut self, expr: &RelationalExpr<T>) -> Self::Output;
+    fn visit_binary_expr(&mut self, expr: &BinaryExpr<T>) -> Self::Output;
     fn visit_field_expr(&mut self, expr: &FieldExpr<T>) -> Self::Output;
     fn visit_relation_expr(&mut self, expr: &RelationExpr<T>) -> Self::Output;
     fn visit_value_expr(&mut self, expr: &ValueExpr) -> Self::Output;
@@ -23,9 +22,9 @@ pub trait ExprVisitor<T> {
 
 pub enum Error {}
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 
-pub enum RelationalOperator {
+pub enum BinaryOperator {
     Eq,
     Neq,
     Gt,
@@ -33,19 +32,13 @@ pub enum RelationalOperator {
     Lt,
     Lte,
     In,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-
-pub enum LogicalOperator {
     And,
     Or,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr<T> {
-    Logical(LogicalExpr<T>),
-    Relational(RelationalExpr<T>),
+    Binary(BinaryExpr<T>),
     Field(FieldExpr<T>),
     Relation(RelationExpr<T>),
     Value(ValueExpr),
@@ -56,9 +49,8 @@ impl<T> Expr<T> {
     pub fn accept<V: ExprVisitor<T>>(&self, visitor: &mut V) -> V::Output {
         match self {
             Expr::Field(field) => visitor.visit_field_expr(field),
-            Expr::Logical(logical) => visitor.visit_logical_expr(logical),
+            Expr::Binary(logical) => visitor.visit_binary_expr(logical),
             Expr::Relation(rel) => visitor.visit_relation_expr(rel),
-            Expr::Relational(rel) => visitor.visit_relational_expr(rel),
             Expr::Value(val) => visitor.visit_value_expr(val),
             Expr::Entity(e) => visitor.visit_entity_expr(e),
         }
@@ -67,33 +59,15 @@ impl<T> Expr<T> {
 
 #[derive(Debug, Clone, PartialEq)]
 
-pub struct LogicalExpr<T> {
+pub struct BinaryExpr<T> {
     pub left: Box<Expr<T>>,
     pub right: Box<Expr<T>>,
-    pub op: LogicalOperator,
+    pub op: BinaryOperator,
 }
 
-impl<T> LogicalExpr<T> {
-    pub fn new(left: Expr<T>, right: Expr<T>, op: LogicalOperator) -> LogicalExpr<T> {
-        LogicalExpr {
-            left: Box::new(left),
-            right: Box::new(right),
-            op,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-
-pub struct RelationalExpr<T> {
-    pub left: Box<Expr<T>>,
-    pub right: Box<Expr<T>>,
-    pub op: RelationalOperator,
-}
-
-impl<T> RelationalExpr<T> {
-    pub fn new(left: Expr<T>, right: Expr<T>, op: RelationalOperator) -> RelationalExpr<T> {
-        RelationalExpr {
+impl<T> BinaryExpr<T> {
+    pub fn new(left: Expr<T>, right: Expr<T>, op: BinaryOperator) -> BinaryExpr<T> {
+        BinaryExpr {
             left: Box::new(left),
             right: Box::new(right),
             op,
@@ -116,7 +90,7 @@ pub struct RelationExpr<T> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ValueExpr {
-    value: Value,
+    pub value: Value,
 }
 
 impl ValueExpr {

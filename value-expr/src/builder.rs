@@ -6,12 +6,12 @@ pub trait Expression<S> {
 }
 
 pub trait ExpressionExt<S>: Expression<S> + Sized {
-    fn and<E: Expression<S>>(self, e: E) -> LogicalExpr<S> {
-        LogicalExpr::new(self.to_ast(), e.to_ast(), LogicalOperator::And)
+    fn and<E: Expression<S>>(self, e: E) -> BinaryExpr<S> {
+        BinaryExpr::new(self.to_ast(), e.to_ast(), BinaryOperator::And)
     }
 
-    fn or<E: Expression<S>>(self, e: E) -> LogicalExpr<S> {
-        LogicalExpr::new(self.to_ast(), e.to_ast(), LogicalOperator::Or)
+    fn or<E: Expression<S>>(self, e: E) -> BinaryExpr<S> {
+        BinaryExpr::new(self.to_ast(), e.to_ast(), BinaryOperator::Or)
     }
 
     // fn and_group<E>(self, e: E) -> BinaryExpr<Self, GroupExpression<E>> {
@@ -33,17 +33,17 @@ pub trait ExpressionExt<S>: Expression<S> + Sized {
 
 impl<'a, S, E> ExpressionExt<S> for E where E: Expression<S> {}
 
-impl<S> Expression<S> for LogicalExpr<S> {
+impl<S> Expression<S> for BinaryExpr<S> {
     fn to_ast(self) -> Expr<S> {
-        Expr::Logical(self)
+        Expr::Binary(self)
     }
 }
 
-impl<S> Expression<S> for RelationalExpr<S> {
-    fn to_ast(self) -> Expr<S> {
-        Expr::Relational(self)
-    }
-}
+// impl<S> Expression<S> for BinaryExpr<S> {
+//     fn to_ast(self) -> Expr<S> {
+//         Expr::Relational(self)
+//     }
+// }
 
 impl<S> Expression<S> for Expr<S> {
     fn to_ast(self) -> Expr<S> {
@@ -90,39 +90,39 @@ impl Col<String> for (String, String) {
 }
 
 pub trait ColExt<S>: Col<S> + Sized {
-    fn eql<V: Into<Value>>(self, value: V) -> RelationalExpr<S> {
-        RelationalExpr::new(self.to_ast(), value.into().to_ast(), RelationalOperator::Eq)
+    fn eql<V: Into<Value>>(self, value: V) -> BinaryExpr<S> {
+        BinaryExpr::new(self.to_ast(), value.into().to_ast(), BinaryOperator::Eq)
     }
 
-    fn lt<V: Into<Value>>(self, value: V) -> RelationalExpr<S> {
-        RelationalExpr::new(self.to_ast(), value.into().to_ast(), RelationalOperator::Lt)
+    fn lt<V: Into<Value>>(self, value: V) -> BinaryExpr<S> {
+        BinaryExpr::new(self.to_ast(), value.into().to_ast(), BinaryOperator::Lt)
     }
 
-    fn lte<V: Into<Value>>(self, value: V) -> RelationalExpr<S> {
-        RelationalExpr::new(
+    fn lte<V: Into<Value>>(self, value: V) -> BinaryExpr<S> {
+        BinaryExpr::new(
             self.to_ast(),
             value.into().to_ast(),
-            RelationalOperator::Lte,
+            BinaryOperator::Lte,
         )
     }
 
-    fn gt<V: Into<Value>>(self, value: V) -> RelationalExpr<S> {
-        RelationalExpr::new(self.to_ast(), value.into().to_ast(), RelationalOperator::Gt)
+    fn gt<V: Into<Value>>(self, value: V) -> BinaryExpr<S> {
+        BinaryExpr::new(self.to_ast(), value.into().to_ast(), BinaryOperator::Gt)
     }
 
-    fn gte<V: Into<Value>>(self, value: V) -> RelationalExpr<S> {
-        RelationalExpr::new(
+    fn gte<V: Into<Value>>(self, value: V) -> BinaryExpr<S> {
+        BinaryExpr::new(
             self.to_ast(),
             value.into().to_ast(),
-            RelationalOperator::Gte,
+            BinaryOperator::Gte,
         )
     }
 
-    fn neq<V: Into<Value>>(self, value: V) -> RelationalExpr<S> {
-        RelationalExpr::new(
+    fn neq<V: Into<Value>>(self, value: V) -> BinaryExpr<S> {
+        BinaryExpr::new(
             self.to_ast(),
             value.into().to_ast(),
-            RelationalOperator::Neq,
+            BinaryOperator::Neq,
         )
     }
 }
