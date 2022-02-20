@@ -10,8 +10,8 @@ pub fn merge(a: &mut Value, b: Value) {
         (Value::List(ref mut a), Value::List(b)) => {
             a.extend(b);
         }
-        (Value::List(ref mut a), Value::Map(b)) => {
-            a.extend([Value::Map(b)]);
+        (Value::List(ref mut a), value) => {
+            a.extend([value]);
         }
         (a, b) => *a = b,
     }
