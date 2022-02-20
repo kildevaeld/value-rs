@@ -7,6 +7,75 @@ use crate::{
 };
 
 #[derive(Debug)]
+pub enum Predication<T> {
+    Parent(T),
+    Field(T),
+    Binary {
+        left: Box<Predication<T>>,
+        right: Box<Predication<T>>,
+        operator: BinaryOperator,
+    },
+    Relation {
+        parent: Box<Predication<T>>,
+        field: Box<Predication<T>>,
+    },
+    Value(Value),
+}
+
+impl<T: AsRef<str> + std::fmt::Debug> Predication<T> {
+    fn call<'b>(&'b self, value: &'b Value) -> ValueRef<'b> {
+        use Predication::*;
+
+        match self {
+            Parent(parent) => value.index(parent.as_ref()).into(),
+            Field(field) => value.index(field.as_ref()).into(),
+            Relation { parent, field } => {
+                //
+                match parent.call(value) {
+                    ValueRef::Borrowed(v) => field.call(v),
+                    ValueRef::Owned(v) => v.into(),
+                }
+            }
+            Binary {
+                left,
+                right,
+                operator,
+            } => {
+                //
+                use value::Value;
+                let left = left.call(value);
+                let right = right.call(value);
+
+                match operator {
+                    BinaryOperator::Or => match (&*left, &*right) {
+                        (Value::Bool(l), Value::Bool(r)) => value::Value::Bool(*l || *r).into(),
+                        _ => Value::Bool(false).into(),
+                    },
+                    BinaryOperator::And => match (&*left, &*right) {
+                        (Value::Bool(l), Value::Bool(r)) => value::Value::Bool(*l && *r).into(),
+                        _ => Value::Bool(false).into(),
+                    },
+                    BinaryOperator::Eq => Value::Bool(&*left == &*right).into(),
+                    BinaryOperator::Neq => Value::Bool(&*left != &*right).into(),
+                    BinaryOperator::Lt => Value::Bool(&*left < &*right).into(),
+                    BinaryOperator::Lte => Value::Bool(&*left <= &*right).into(),
+                    BinaryOperator::Gt => Value::Bool(&*left > &*right).into(),
+                    BinaryOperator::Gte => Value::Bool(&*left >= &*right).into(),
+                    BinaryOperator::In => {
+                        if let Some(list) = right.as_list() {
+                            Value::Bool(list.contains(&left)).into()
+                        } else {
+                            Value::Bool(false).into()
+                        }
+                    }
+                }
+            }
+            Value(val) => val.into(),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub enum ValueRef<'a> {
     Owned(Value),
     Borrowed(&'a Value),
@@ -50,8 +119,6 @@ where
 #[derive(Debug)]
 pub enum Error {}
 
-pub type Predicate<'a> = Box<dyn Predicator<'a> + 'a>;
-
 pub struct PredicateVistior<'a> {
     _a: PhantomData<&'a dyn Fn()>,
 }
@@ -66,111 +133,70 @@ impl<'a, T> ExprVisitor<T> for PredicateVistior<'a>
 where
     T: AsRef<str> + 'a,
 {
-    type Output = Result<Predicate<'a>, Error>;
-    fn visit_binary_expr(&mut self, expr: &BinaryExpr<T>) -> Self::Output {
+    type Output = Result<Predication<T>, Error>;
+    fn visit_binary_expr(&mut self, expr: BinaryExpr<T>) -> Self::Output {
         let left = expr.left.accept(self)?;
         let right = expr.right.accept(self)?;
 
-        Ok(Box::new(BinaryPredicator {
-            left,
-            right,
-            op: expr.op,
-        }))
+        Ok(Predication::Binary {
+            left: Box::new(left),
+            right: Box::new(right),
+            operator: expr.op,
+        })
     }
-    fn visit_field_expr(&mut self, expr: &FieldExpr<T>) -> Self::Output {
-        let name = expr.name.as_ref().to_string();
-        Ok(Box::new(move |value: &'a Value| value.index(&name).into()))
+    fn visit_field_expr(&mut self, expr: FieldExpr<T>) -> Self::Output {
+        Ok(Predication::Field(expr.name))
     }
-    fn visit_relation_expr(&mut self, expr: &RelationExpr<T>) -> Self::Output {
+    fn visit_relation_expr(&mut self, expr: RelationExpr<T>) -> Self::Output {
         let parent = expr.relation.accept(self)?;
         let field = expr.field.accept(self)?;
 
-        Ok(Box::new(RelationPredicator { parent, field }))
+        Ok(Predication::Relation {
+            parent: Box::new(parent),
+            field: Box::new(field),
+        })
     }
 
-    fn visit_value_expr(&mut self, expr: &ValueExpr) -> Self::Output {
-        Ok(Box::new(ValuePredicate {
-            value: expr.value.clone(),
-            _a: PhantomData,
-        }))
+    fn visit_value_expr(&mut self, expr: ValueExpr) -> Self::Output {
+        Ok(Predication::Value(expr.value))
     }
-    fn visit_entity_expr(&mut self, expr: &EntityExpr<T>) -> Self::Output {
-        let name = expr.name.as_ref().to_string();
-        Ok(Box::new(move |value: &'a Value| value.index(&name).into()))
-    }
-}
-
-struct RelationPredicator<'a> {
-    parent: Predicate<'a>,
-    field: Predicate<'a>,
-}
-
-impl<'a> Predicator<'a> for RelationPredicator<'a> {
-    fn call(&self, value: &'a Value) -> ValueRef<'a> {
-        let parent = self.parent.call(value);
-        match parent {
-            ValueRef::Borrowed(value) => self.field.call(value),
-            ValueRef::Owned(value) => value.into(),
-        }
+    fn visit_entity_expr(&mut self, expr: EntityExpr<T>) -> Self::Output {
+        Ok(Predication::Parent(expr.name))
     }
 }
 
-struct ValuePredicate<'a> {
-    value: Value,
-    _a: PhantomData<&'a dyn Fn()>,
-}
-
-impl<'a> Predicator<'a> for ValuePredicate<'a> {
-    fn call(&self, _value: &'a Value) -> ValueRef<'a> {
-        self.value.into()
-    }
-}
-
-struct BinaryPredicator<'a> {
-    left: Predicate<'a>,
-    right: Predicate<'a>,
-    op: BinaryOperator,
-}
-
-impl<'a> Predicator<'a> for BinaryPredicator<'a> {
-    fn call(&self, value: &'a Value) -> ValueRef<'a> {
-        let left = self.left.call(value);
-        let right = self.right.call(value);
-        match self.op {
-            BinaryOperator::Or => match (&*left, &*right) {
-                (Value::Bool(l), Value::Bool(r)) => Value::Bool(*l || *r).into(),
-                _ => {
-                    println!("lefft: {:?}, right: {:?}", left, right);
-                    Value::Bool(false).into()
-                }
-            },
-            BinaryOperator::Eq => Value::Bool(&*left == &*right).into(),
-            BinaryOperator::Lte => Value::Bool(&*left <= &*right).into(),
-            _ => panic!("not implmented {:?}", self.op),
-        }
-    }
-}
-
-pub struct Filter<'a, I> {
+pub struct Filter<I, S> {
     iter: I,
-    predicate: Predicate<'a>,
+    predicate: Predication<S>,
 }
 
-impl<'a, I> Filter<'a, I>
-where
-    I: Iterator<Item = Value>,
-{
-    fn filter(&self) -> Vec<I::Item> {
-        self.iter
-            .filter(|item| {
-                let value = self.predicate.call(item);
+impl<I, S> Filter<I, S> {
+    pub fn new(iter: I, predicate: Predication<S>) -> Filter<I, S> {
+        Filter { iter, predicate }
+    }
+}
 
-                match &*value {
-                    Value::Bool(b) => *b,
-                    _ => false,
-                }
-            })
-            .collect()
+impl<I, S> Iterator for Filter<I, S>
+where
+    I: Iterator,
+    I::Item: AsRef<Value>,
+    S: AsRef<str> + std::fmt::Debug,
+{
+    type Item = I::Item;
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            let item = match self.iter.next() {
+                Some(next) => next,
+                None => return None,
+            };
+
+            let value = self.predicate.call(item.as_ref());
+
+            match &*value {
+                Value::Bool(b) if *b => return Some(item),
+                _ => continue,
+            }
+        }
     }
 }
 
@@ -212,42 +238,15 @@ mod test {
 
         let query = "name"
             .eql("Rasmus")
-            .or("age".lte(12))
-            .or("pet".eql("guinea pig"))
+            .or("age".lte(13))
+            .or(("pet", "type").eql("cat"))
             .to_ast();
         let mut visitor = PredicateVistior::default();
 
         let predicate = query.accept(&mut visitor).unwrap();
 
-        let ret = list.iter().filter_map();
+        let filter = Filter::new(list.into_iter(), predicate);
 
-        // let filter = Filter {
-        //     iter: list.iter(),
-        //     predicate: predicate,
-        // };
-
-        // let ret = filter.filter();
-
-        // let ret = {
-        //     let filter = Filter {
-        //         iter: list.iter(),
-        //         predicate: predicate,
-        //     };
-
-        //     let ret = filter.filter();
-        //     ret
-        // };
-
-        // let filtered = list.into_iter().filter(move |value| {
-        //     //
-        //     let ret = predicate.call(value);
-        //     match &*ret {
-        //         Value::Bool(b) => *b,
-        //         _ => false
-        //     }
-
-        // }).collect::<Vec<_>>();
-
-        println!("Filted {:#?}", ret);
+        println!("Filted {:#?}", filter.collect::<Vec<_>>());
     }
 }

@@ -321,3 +321,9 @@ impl From<f64> for Value {
         Value::Number(s.into())
     }
 }
+
+impl AsRef<Value> for Value {
+    fn as_ref(&self) -> &Value {
+        self
+    }
+}

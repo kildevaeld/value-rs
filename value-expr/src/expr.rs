@@ -1,23 +1,12 @@
-use value::{Number, Value};
-
-pub trait TryCompare {
-    fn try_eq(&self, value: &Value) -> Result<bool, Error>;
-    // fn try_lte(&self, value: &Value) -> Result<bool, Error>;
-}
-
-impl TryCompare for Value {
-    fn try_eq(&self, value: &Value) -> Result<bool, Error> {
-        Ok(true)
-    }
-}
+use value::Value;
 
 pub trait ExprVisitor<T> {
     type Output;
-    fn visit_binary_expr(&mut self, expr: &BinaryExpr<T>) -> Self::Output;
-    fn visit_field_expr(&mut self, expr: &FieldExpr<T>) -> Self::Output;
-    fn visit_relation_expr(&mut self, expr: &RelationExpr<T>) -> Self::Output;
-    fn visit_value_expr(&mut self, expr: &ValueExpr) -> Self::Output;
-    fn visit_entity_expr(&mut self, expr: &EntityExpr<T>) -> Self::Output;
+    fn visit_binary_expr(&mut self, expr: BinaryExpr<T>) -> Self::Output;
+    fn visit_field_expr(&mut self, expr: FieldExpr<T>) -> Self::Output;
+    fn visit_relation_expr(&mut self, expr: RelationExpr<T>) -> Self::Output;
+    fn visit_value_expr(&mut self, expr: ValueExpr) -> Self::Output;
+    fn visit_entity_expr(&mut self, expr: EntityExpr<T>) -> Self::Output;
 }
 
 pub enum Error {}
@@ -46,7 +35,7 @@ pub enum Expr<T> {
 }
 
 impl<T> Expr<T> {
-    pub fn accept<V: ExprVisitor<T>>(&self, visitor: &mut V) -> V::Output {
+    pub fn accept<V: ExprVisitor<T>>(self, visitor: &mut V) -> V::Output {
         match self {
             Expr::Field(field) => visitor.visit_field_expr(field),
             Expr::Binary(logical) => visitor.visit_binary_expr(logical),
