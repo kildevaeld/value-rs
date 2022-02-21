@@ -6,8 +6,11 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-value = {path = "../value"}
+value = {path = "../value", optional = true}
+
+[dev-dependencies]
+value = {path = "../value", features = ["serde"]}
 
 [features]
-default = ["std"]
-std = ["value/std", "value/serde"]
+default = ["std", "value"]
+std = []

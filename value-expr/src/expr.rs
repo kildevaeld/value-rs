@@ -1,4 +1,5 @@
-use value::Value;
+#[cfg(not(feature = "std"))]
+use alloc::boxed::Box;
 
 pub trait ExprVisitor<T, V> {
     type Output;
@@ -8,8 +9,6 @@ pub trait ExprVisitor<T, V> {
     fn visit_value_expr(&mut self, expr: ValueExpr<V>) -> Self::Output;
     fn visit_entity_expr(&mut self, expr: EntityExpr<T>) -> Self::Output;
 }
-
-pub enum Error {}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 

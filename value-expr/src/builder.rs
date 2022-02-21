@@ -1,5 +1,6 @@
 use super::expr::*;
-use value::Value;
+#[cfg(not(feature = "std"))]
+use alloc::{boxed::Box, string::String};
 
 pub trait Expression<S, V> {
     fn to_ast(self) -> Expr<S, V>;
@@ -116,6 +117,10 @@ where
     fn neq<V: Into<Value>>(self, value: V) -> BinaryExpr<S, Value> {
         BinaryExpr::new(self.to_ast(), value.into().to_ast(), BinaryOperator::Neq)
     }
+
+    fn contains<V: Into<Value>>(self, value: V) -> BinaryExpr<S, Value> {
+        BinaryExpr::new(self.to_ast(), value.into().to_ast(), BinaryOperator::In)
+    }
 }
 
 impl<S, V, C: Col<S, V>> ColExt<S, V> for C where V: Val<S> {}
@@ -124,8 +129,9 @@ pub trait Val<S>: Sized {
     fn to_ast(self) -> Expr<S, Self>;
 }
 
-impl<S> Val<S> for Value {
-    fn to_ast(self) -> Expr<S, Value> {
+#[cfg(feature = "value")]
+impl<S> Val<S> for value::Value {
+    fn to_ast(self) -> Expr<S, value::Value> {
         Expr::Value(ValueExpr::new(self))
     }
 }

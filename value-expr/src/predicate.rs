@@ -1,10 +1,10 @@
-use std::marker::PhantomData;
-use std::ops::Index;
-use value::Value;
-
 use crate::{
-    BinaryExpr, BinaryOperator, EntityExpr, ExprVisitor, FieldExpr, RelationExpr, ValueExpr,
+    BinaryExpr, BinaryOperator, EntityExpr, Expr, ExprVisitor, FieldExpr, RelationExpr, ValueExpr,
 };
+#[cfg(not(feature = "std"))]
+use alloc::boxed::Box;
+use core::ops::Index;
+use value::Value;
 
 #[derive(Debug)]
 pub enum Predication<T> {
@@ -22,7 +22,7 @@ pub enum Predication<T> {
     Value(Value),
 }
 
-impl<T: AsRef<str> + std::fmt::Debug> Predication<T> {
+impl<T: AsRef<str> + core::fmt::Debug> Predication<T> {
     fn call<'b>(&'b self, value: &'b Value) -> ValueRef<'b, Value> {
         use Predication::*;
 
@@ -73,6 +73,14 @@ impl<T: AsRef<str> + std::fmt::Debug> Predication<T> {
             Value(val) => val.into(),
         }
     }
+
+    pub fn filter<I>(self, iter: I) -> Filter<I, T>
+    where
+        I: IntoIterator,
+        I::Item: AsRef<Value>,
+    {
+        Filter::new(iter.into(), self)
+    }
 }
 
 #[derive(Debug)]
@@ -81,7 +89,7 @@ pub enum ValueRef<'a, V> {
     Borrowed(&'a V),
 }
 
-impl<'a, V> std::ops::Deref for ValueRef<'a, V> {
+impl<'a, V> core::ops::Deref for ValueRef<'a, V> {
     type Target = V;
     fn deref(&self) -> &V {
         match self {
@@ -113,35 +121,35 @@ impl<T> ExprVisitor<T, Value> for PredicateVistior
 where
     T: AsRef<str>,
 {
-    type Output = Result<Predication<T>, Error>;
+    type Output = Predication<T>;
     fn visit_binary_expr(&mut self, expr: BinaryExpr<T, Value>) -> Self::Output {
-        let left = expr.left.accept(self)?;
-        let right = expr.right.accept(self)?;
+        let left = expr.left.accept(self);
+        let right = expr.right.accept(self);
 
-        Ok(Predication::Binary {
+        Predication::Binary {
             left: Box::new(left),
             right: Box::new(right),
             operator: expr.op,
-        })
+        }
     }
     fn visit_field_expr(&mut self, expr: FieldExpr<T>) -> Self::Output {
-        Ok(Predication::Field(expr.name))
+        Predication::Field(expr.name)
     }
     fn visit_relation_expr(&mut self, expr: RelationExpr<T, Value>) -> Self::Output {
-        let parent = expr.relation.accept(self)?;
-        let field = expr.field.accept(self)?;
+        let parent = expr.relation.accept(self);
+        let field = expr.field.accept(self);
 
-        Ok(Predication::Relation {
+        Predication::Relation {
             parent: Box::new(parent),
             field: Box::new(field),
-        })
+        }
     }
 
     fn visit_value_expr(&mut self, expr: ValueExpr<Value>) -> Self::Output {
-        Ok(Predication::Value(expr.value))
+        Predication::Value(expr.value)
     }
     fn visit_entity_expr(&mut self, expr: EntityExpr<T>) -> Self::Output {
-        Ok(Predication::Parent(expr.name))
+        Predication::Parent(expr.name)
     }
 }
 
@@ -160,7 +168,7 @@ impl<I, S> Iterator for Filter<I, S>
 where
     I: Iterator,
     I::Item: AsRef<Value>,
-    S: AsRef<str> + std::fmt::Debug,
+    S: AsRef<str> + core::fmt::Debug,
 {
     type Item = I::Item;
     fn next(&mut self) -> Option<Self::Item> {
@@ -179,6 +187,22 @@ where
         }
     }
 }
+
+pub trait IteratorExt: Iterator {
+    fn query<E, S>(self, query: E) -> Filter<Self, S>
+    where
+        E: Into<Expr<S, Value>>,
+        S: AsRef<str>,
+        Self: Sized,
+        Self::Item: AsRef<Value>,
+    {
+        let mut visitor = PredicateVistior::default();
+        let predicate = query.into().accept(&mut visitor);
+        Filter::new(self, predicate)
+    }
+}
+
+impl<I> IteratorExt for I where I: Iterator {}
 
 #[cfg(test)]
 mod test {
@@ -223,10 +247,10 @@ mod test {
             .to_ast();
         let mut visitor = PredicateVistior::default();
 
-        let predicate = query.accept(&mut visitor).unwrap();
+        let predicate = query.accept(&mut visitor);
 
         let filter = Filter::new(list.into_iter(), predicate);
 
-        println!("Filted {:#?}", filter.collect::<Vec<_>>());
+        // println!("Filted {:#?}", filter.collect::<Vec<_>>());
     }
 }
