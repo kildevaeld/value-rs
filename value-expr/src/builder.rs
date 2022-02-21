@@ -1,16 +1,16 @@
 use super::expr::*;
 use value::Value;
 
-pub trait Expression<S> {
-    fn to_ast(self) -> Expr<S>;
+pub trait Expression<S, V> {
+    fn to_ast(self) -> Expr<S, V>;
 }
 
-pub trait ExpressionExt<S>: Expression<S> + Sized {
-    fn and<E: Expression<S>>(self, e: E) -> BinaryExpr<S> {
+pub trait ExpressionExt<S, V>: Expression<S, V> + Sized {
+    fn and<E: Expression<S, V>>(self, e: E) -> BinaryExpr<S, V> {
         BinaryExpr::new(self.to_ast(), e.to_ast(), BinaryOperator::And)
     }
 
-    fn or<E: Expression<S>>(self, e: E) -> BinaryExpr<S> {
+    fn or<E: Expression<S, V>>(self, e: E) -> BinaryExpr<S, V> {
         BinaryExpr::new(self.to_ast(), e.to_ast(), BinaryOperator::Or)
     }
 
@@ -31,10 +31,10 @@ pub trait ExpressionExt<S>: Expression<S> + Sized {
     // }
 }
 
-impl<'a, S, E> ExpressionExt<S> for E where E: Expression<S> {}
+impl<'a, S, V, E> ExpressionExt<S, V> for E where E: Expression<S, V> {}
 
-impl<S> Expression<S> for BinaryExpr<S> {
-    fn to_ast(self) -> Expr<S> {
+impl<S, V> Expression<S, V> for BinaryExpr<S, V> {
+    fn to_ast(self) -> Expr<S, V> {
         Expr::Binary(self)
     }
 }
@@ -45,34 +45,34 @@ impl<S> Expression<S> for BinaryExpr<S> {
 //     }
 // }
 
-impl<S> Expression<S> for Expr<S> {
-    fn to_ast(self) -> Expr<S> {
+impl<S, V> Expression<S, V> for Expr<S, V> {
+    fn to_ast(self) -> Expr<S, V> {
         self
     }
 }
 
-pub trait ToAst<S> {
-    fn to_ast(self) -> Expr<S>;
+pub trait ToAst<S, V> {
+    fn to_ast(self) -> Expr<S, V>;
 }
 
-pub trait Col<S> {
-    fn to_ast(self) -> Expr<S>;
+pub trait Col<S, V> {
+    fn to_ast(self) -> Expr<S, V>;
 }
 
-impl Col<String> for String {
-    fn to_ast(self) -> Expr<String> {
+impl<V> Col<String, V> for String {
+    fn to_ast(self) -> Expr<String, V> {
         Expr::Field(FieldExpr { name: self })
     }
 }
 
-impl<'a> Col<&'a str> for &'a str {
-    fn to_ast(self) -> Expr<&'a str> {
+impl<'a, V> Col<&'a str, V> for &'a str {
+    fn to_ast(self) -> Expr<&'a str, V> {
         Expr::Field(FieldExpr { name: self })
     }
 }
 
-impl<'a> Col<&'a str> for (&'a str, &'a str) {
-    fn to_ast(self) -> Expr<&'a str> {
+impl<'a, V> Col<&'a str, V> for (&'a str, &'a str) {
+    fn to_ast(self) -> Expr<&'a str, V> {
         Expr::Relation(RelationExpr {
             relation: Box::new(Expr::Entity(EntityExpr { name: self.0 })),
             field: Box::new(Expr::Field(FieldExpr { name: self.1 })),
@@ -80,8 +80,8 @@ impl<'a> Col<&'a str> for (&'a str, &'a str) {
     }
 }
 
-impl Col<String> for (String, String) {
-    fn to_ast(self) -> Expr<String> {
+impl<V> Col<String, V> for (String, String) {
+    fn to_ast(self) -> Expr<String, V> {
         Expr::Relation(RelationExpr {
             relation: Box::new(Expr::Entity(EntityExpr { name: self.0 })),
             field: Box::new(Expr::Field(FieldExpr { name: self.1 })),
@@ -89,52 +89,43 @@ impl Col<String> for (String, String) {
     }
 }
 
-pub trait ColExt<S>: Col<S> + Sized {
-    fn eql<V: Into<Value>>(self, value: V) -> BinaryExpr<S> {
+pub trait ColExt<S, Value>: Col<S, Value> + Sized
+where
+    Value: Val<S>,
+{
+    fn eql<V: Into<Value>>(self, value: V) -> BinaryExpr<S, Value> {
         BinaryExpr::new(self.to_ast(), value.into().to_ast(), BinaryOperator::Eq)
     }
 
-    fn lt<V: Into<Value>>(self, value: V) -> BinaryExpr<S> {
+    fn lt<V: Into<Value>>(self, value: V) -> BinaryExpr<S, Value> {
         BinaryExpr::new(self.to_ast(), value.into().to_ast(), BinaryOperator::Lt)
     }
 
-    fn lte<V: Into<Value>>(self, value: V) -> BinaryExpr<S> {
-        BinaryExpr::new(
-            self.to_ast(),
-            value.into().to_ast(),
-            BinaryOperator::Lte,
-        )
+    fn lte<V: Into<Value>>(self, value: V) -> BinaryExpr<S, Value> {
+        BinaryExpr::new(self.to_ast(), value.into().to_ast(), BinaryOperator::Lte)
     }
 
-    fn gt<V: Into<Value>>(self, value: V) -> BinaryExpr<S> {
+    fn gt<V: Into<Value>>(self, value: V) -> BinaryExpr<S, Value> {
         BinaryExpr::new(self.to_ast(), value.into().to_ast(), BinaryOperator::Gt)
     }
 
-    fn gte<V: Into<Value>>(self, value: V) -> BinaryExpr<S> {
-        BinaryExpr::new(
-            self.to_ast(),
-            value.into().to_ast(),
-            BinaryOperator::Gte,
-        )
+    fn gte<V: Into<Value>>(self, value: V) -> BinaryExpr<S, Value> {
+        BinaryExpr::new(self.to_ast(), value.into().to_ast(), BinaryOperator::Gte)
     }
 
-    fn neq<V: Into<Value>>(self, value: V) -> BinaryExpr<S> {
-        BinaryExpr::new(
-            self.to_ast(),
-            value.into().to_ast(),
-            BinaryOperator::Neq,
-        )
+    fn neq<V: Into<Value>>(self, value: V) -> BinaryExpr<S, Value> {
+        BinaryExpr::new(self.to_ast(), value.into().to_ast(), BinaryOperator::Neq)
     }
 }
 
-impl<S, C: Col<S>> ColExt<S> for C {}
+impl<S, V, C: Col<S, V>> ColExt<S, V> for C where V: Val<S> {}
 
-pub trait Val<S> {
-    fn to_ast(self) -> Expr<S>;
+pub trait Val<S>: Sized {
+    fn to_ast(self) -> Expr<S, Self>;
 }
 
 impl<S> Val<S> for Value {
-    fn to_ast(self) -> Expr<S> {
+    fn to_ast(self) -> Expr<S, Value> {
         Expr::Value(ValueExpr::new(self))
     }
 }

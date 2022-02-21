@@ -23,7 +23,7 @@ pub enum Predication<T> {
 }
 
 impl<T: AsRef<str> + std::fmt::Debug> Predication<T> {
-    fn call<'b>(&'b self, value: &'b Value) -> ValueRef<'b> {
+    fn call<'b>(&'b self, value: &'b Value) -> ValueRef<'b, Value> {
         use Predication::*;
 
         match self {
@@ -76,14 +76,14 @@ impl<T: AsRef<str> + std::fmt::Debug> Predication<T> {
 }
 
 #[derive(Debug)]
-pub enum ValueRef<'a> {
-    Owned(Value),
-    Borrowed(&'a Value),
+pub enum ValueRef<'a, V> {
+    Owned(V),
+    Borrowed(&'a V),
 }
 
-impl<'a> std::ops::Deref for ValueRef<'a> {
-    type Target = Value;
-    fn deref(&self) -> &Value {
+impl<'a, V> std::ops::Deref for ValueRef<'a, V> {
+    type Target = V;
+    fn deref(&self) -> &V {
         match self {
             ValueRef::Owned(v) => v,
             ValueRef::Borrowed(v) => v,
@@ -91,50 +91,30 @@ impl<'a> std::ops::Deref for ValueRef<'a> {
     }
 }
 
-impl<'a> From<Value> for ValueRef<'a> {
-    fn from(value: Value) -> ValueRef<'a> {
+impl<'a> From<Value> for ValueRef<'a, Value> {
+    fn from(value: Value) -> ValueRef<'a, Value> {
         ValueRef::Owned(value)
     }
 }
 
-impl<'a> From<&'a Value> for ValueRef<'a> {
-    fn from(value: &'a Value) -> ValueRef<'a> {
+impl<'a> From<&'a Value> for ValueRef<'a, Value> {
+    fn from(value: &'a Value) -> ValueRef<'a, Value> {
         ValueRef::Borrowed(value)
-    }
-}
-
-pub trait Predicator<'a> {
-    fn call(&self, value: &'a Value) -> ValueRef<'a>;
-}
-
-impl<'a, F> Predicator<'a> for F
-where
-    F: Fn(&'a Value) -> ValueRef<'a>,
-{
-    fn call(&self, value: &'a Value) -> ValueRef<'a> {
-        (self)(value)
     }
 }
 
 #[derive(Debug)]
 pub enum Error {}
 
-pub struct PredicateVistior<'a> {
-    _a: PhantomData<&'a dyn Fn()>,
-}
+#[derive(Default)]
+pub struct PredicateVistior;
 
-impl<'a> Default for PredicateVistior<'a> {
-    fn default() -> PredicateVistior<'a> {
-        PredicateVistior { _a: PhantomData }
-    }
-}
-
-impl<'a, T> ExprVisitor<T> for PredicateVistior<'a>
+impl<T> ExprVisitor<T, Value> for PredicateVistior
 where
-    T: AsRef<str> + 'a,
+    T: AsRef<str>,
 {
     type Output = Result<Predication<T>, Error>;
-    fn visit_binary_expr(&mut self, expr: BinaryExpr<T>) -> Self::Output {
+    fn visit_binary_expr(&mut self, expr: BinaryExpr<T, Value>) -> Self::Output {
         let left = expr.left.accept(self)?;
         let right = expr.right.accept(self)?;
 
@@ -147,7 +127,7 @@ where
     fn visit_field_expr(&mut self, expr: FieldExpr<T>) -> Self::Output {
         Ok(Predication::Field(expr.name))
     }
-    fn visit_relation_expr(&mut self, expr: RelationExpr<T>) -> Self::Output {
+    fn visit_relation_expr(&mut self, expr: RelationExpr<T, Value>) -> Self::Output {
         let parent = expr.relation.accept(self)?;
         let field = expr.field.accept(self)?;
 
@@ -157,7 +137,7 @@ where
         })
     }
 
-    fn visit_value_expr(&mut self, expr: ValueExpr) -> Self::Output {
+    fn visit_value_expr(&mut self, expr: ValueExpr<Value>) -> Self::Output {
         Ok(Predication::Value(expr.value))
     }
     fn visit_entity_expr(&mut self, expr: EntityExpr<T>) -> Self::Output {
@@ -203,7 +183,7 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::builder::*;
+    use crate::{builder::*, Expr};
 
     use value::value;
 
@@ -236,7 +216,7 @@ mod test {
             }),
         ];
 
-        let query = "name"
+        let query: Expr<_, Value> = "name"
             .eql("Rasmus")
             .or("age".lte(13))
             .or(("pet", "type").eql("cat"))
