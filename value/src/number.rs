@@ -3,27 +3,26 @@ use core::fmt;
 #[cfg(feature = "ordered_float")]
 use ordered_float_lib::OrderedFloat;
 
-use crate::Typed;
+use crate::{Typed, ValueType};
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-pub enum NumberType {
-    U8,
-    U16,
-    U32,
-    U64,
-    I8,
-    I16,
-    I32,
-    I64,
-    F32,
-    F64,
-}
-
+// #[cfg_attr(
+//     feature = "serde",
+//     derive(serde_lib::Serialize, serde_lib::Deserialize)
+// )]
+// #[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+// #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+// pub enum NumberType {
+//     U8,
+//     U16,
+//     U32,
+//     U64,
+//     I8,
+//     I16,
+//     I32,
+//     I64,
+//     F32,
+//     F64,
+// }
 #[cfg_attr(not(feature = "ordered_float"), derive(Debug, Clone, Copy, PartialOrd))]
 #[cfg_attr(
     feature = "ordered_float",
@@ -51,17 +50,11 @@ pub enum Number {
 impl PartialEq for Number {
     fn eq(&self, other: &Self) -> bool {
         let ty = self.ty();
-        if ty == NumberType::F32 || ty == NumberType::F64 {
+        if ty == ValueType::F32 || ty == ValueType::F64 {
             self.as_f64() == other.as_f64()
         } else {
             self.as_u64() == other.as_u64()
         }
-    }
-}
-
-impl Typed for Number {
-    fn typed() -> crate::ValueType {
-        crate::ValueType::Number
     }
 }
 
@@ -99,28 +92,28 @@ macro_rules! as_method {
 
 impl Number {
     #[inline]
-    pub fn ty(&self) -> NumberType {
+    pub fn ty(&self) -> ValueType {
         match *self {
-            Number::U8(_) => NumberType::U8,
-            Number::I8(_) => NumberType::I8,
-            Number::U16(_) => NumberType::U16,
-            Number::I16(_) => NumberType::I16,
-            Number::I32(_) => NumberType::I32,
-            Number::U32(_) => NumberType::U32,
-            Number::I64(_) => NumberType::I64,
-            Number::U64(_) => NumberType::U64,
+            Number::U8(_) => ValueType::U8,
+            Number::I8(_) => ValueType::I8,
+            Number::U16(_) => ValueType::U16,
+            Number::I16(_) => ValueType::I16,
+            Number::I32(_) => ValueType::I32,
+            Number::U32(_) => ValueType::U32,
+            Number::I64(_) => ValueType::I64,
+            Number::U64(_) => ValueType::U64,
             #[cfg(feature = "ordered_float")]
-            Number::F32(_) => NumberType::F32,
+            Number::F32(_) => ValueType::F32,
             #[cfg(feature = "ordered_float")]
-            Number::F64(_) => NumberType::F64,
+            Number::F64(_) => ValueType::F64,
             #[cfg(not(feature = "ordered_float"))]
-            Number::F32(_) => NumberType::F32,
+            Number::F32(_) => ValueType::F32,
             #[cfg(not(feature = "ordered_float"))]
-            Number::F64(_) => NumberType::F64,
+            Number::F64(_) => ValueType::F64,
         }
     }
 
-    pub fn is(&self, ty: NumberType) -> bool {
+    pub fn is(&self, ty: ValueType) -> bool {
         self.ty() == ty
     }
 

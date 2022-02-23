@@ -10,7 +10,7 @@ use alloc::{
 #[cfg(feature = "std")]
 use std::{collections::BTreeMap, string::String};
 
-use crate::{number::Number, Map, NumberType};
+use crate::{number::Number, Map};
 
 #[cfg(feature = "serde")]
 use super::de::DeserializerError;
@@ -24,8 +24,19 @@ use serde_lib::de::Deserialize;
 #[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub enum ValueType {
+    // Numbers
+    U8,
+    U16,
+    U32,
+    U64,
+    I8,
+    I16,
+    I32,
+    I64,
+    F32,
+    F64,
+
     Bool,
-    Number,
     Char,
     String,
     List,
@@ -39,29 +50,29 @@ pub enum ValueType {
 }
 
 impl ValueType {
-    pub fn can_cast(&self, ty: &ValueType) -> bool {
-        use ValueType::*;
-        if self == ty {
-            return true;
-        }
+    // pub fn can_cast(&self, ty: &ValueType) -> bool {
+    //     use ValueType::*;
+    //     if self == ty {
+    //         return true;
+    //     }
 
-        match (*self, *ty) {
-            (Number, Number | String | Bool | Char) => true,
-            #[cfg(feature = "datetime")]
-            (DateTime | Date, Date | DateTime | String) => true,
-            (Bool, Number | String | Char) => true,
-            (Char, Bool | Number | String) => true,
-            (Map | List | String, Bool) => true,
-            (String, Bytes) => true,
-            (Map, List) => true,
-            (_, List) => true,
-            _ => false,
-        }
-    }
+    //     match (*self, *ty) {
+    //         (Number, Number | String | Bool | Char) => true,
+    //         #[cfg(feature = "datetime")]
+    //         (DateTime | Date, Date | DateTime | String) => true,
+    //         (Bool, Number | String | Char) => true,
+    //         (Char, Bool | Number | String) => true,
+    //         (Map | List | String, Bool) => true,
+    //         (String, Bytes) => true,
+    //         (Map, List) => true,
+    //         (_, List) => true,
+    //         _ => false,
+    //     }
+    // }
 
     pub fn is_number(&self) -> bool {
         match self {
-            ValueType::Number => true,
+            ValueType::U8 | ValueType::I8 => true,
             _ => false,
         }
     }
@@ -136,7 +147,7 @@ impl Value {
     pub fn ty(&self) -> ValueType {
         match self {
             Value::Bool(_) => ValueType::Bool,
-            Value::Number(_) => ValueType::Number,
+            Value::Number(n) => n.ty(),
             Value::Char(_) => ValueType::Char,
             Value::String(_) => ValueType::String,
             Value::None => ValueType::None,
@@ -152,13 +163,6 @@ impl Value {
 
     pub fn is(&self, ty: ValueType) -> bool {
         self.ty() == ty
-    }
-
-    pub fn is_number_type(&self, ty: NumberType) -> bool {
-        match self {
-            Value::Number(n) => n.ty() == ty,
-            _ => false,
-        }
     }
 
     pub fn is_number(&self) -> bool {
@@ -220,7 +224,7 @@ impl Value {
         T::deserialize(self)
     }
 
-    pub fn convert(self, ty: ValueType) -> Option<Value> {
+    /*pub fn convert(self, ty: ValueType) -> Option<Value> {
         let selftype = self.ty();
         if selftype == ty {
             return Some(self);
@@ -259,7 +263,7 @@ impl Value {
             (value, ValueType::List) => Some(Value::List(vec![value])),
             _ => None,
         }
-    }
+    }*/
 }
 
 macro_rules! from_impl {

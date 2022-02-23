@@ -20,7 +20,7 @@ macro_rules! ty_impl {
     ($name: ty, number $ty: ident) => {
         impl Typed for $name {
             fn typed() -> ValueType {
-                ValueType::Number
+                ValueType::$ty
             }
         }
     };

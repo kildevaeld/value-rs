@@ -3,14 +3,14 @@ use crate::{
     Validator, ValidatorBuilderExt,
 };
 use alloc::{collections::BTreeMap, vec, vec::Vec};
-use value::NumberType;
+use value::ValueType;
 
 macro_rules! validatable_number {
     ($($ty: ident => $kind: ident),*) => {
         $(
             impl Validatable for $ty {
                 fn validator() -> Validator {
-                    NumberValidator::default().kind(NumberType::$kind).into()
+                    NumberValidator::default().kind(ValueType::$kind).into()
                 }
             }
 

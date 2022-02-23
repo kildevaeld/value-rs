@@ -22,9 +22,32 @@ fn main() {
     // let o: Validator = any_of(vec![o.into(), number().into()]).into();
     // let o: ValidationBox = Box::new(o);
 
-    let json = serde_json::to_string_pretty(&o).unwrap();
+    // let json = serde_json::to_string_pretty(&o).unwrap();
+    // let json = serde_json::to_string_pretty(&value!({
+    //     "name": "Rasmus1",
+    //     "age": 18,
+    //     "list": [
+    //         "test",
+    //         {
+    //             "test": ""
+    //         }
+    //     ]
+    // }))
+    // .unwrap();
 
-    println!("{}", json);
+    println!(
+        "{:#?}",
+        &value!({
+            "name": "Rasmus1",
+            "age": 18,
+            "list": [
+                "test",
+                {
+                    "test": ""
+                }
+            ]
+        })
+    );
     o.validate(&value!({
         "name": "Rasmus1",
         "age": 18,

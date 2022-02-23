@@ -2,7 +2,7 @@ use crate::{error::Error, types::ValidationList, Validator};
 use alloc::{boxed::Box, vec::Vec};
 use core::any::Any;
 use core::fmt::Debug;
-use value::{NumberType, Value, ValueType};
+use value::{Value, ValueType};
 
 pub type ValidationBox = Box<dyn Validation>;
 
@@ -261,7 +261,7 @@ pub fn item<V: Into<Validator>>(value: V) -> Item {
 )]
 #[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
 #[derive(Debug)]
-pub struct NumberSize(pub NumberType);
+pub struct NumberSize(pub ValueType);
 
 #[cfg_attr(feature = "serde", typetag::serde(name = "item"))]
 impl Validation for NumberSize {
@@ -273,6 +273,6 @@ impl Validation for NumberSize {
     }
 }
 
-pub fn number_kind(kind: NumberType) -> NumberSize {
+pub fn number_kind(kind: ValueType) -> NumberSize {
     NumberSize(kind)
 }

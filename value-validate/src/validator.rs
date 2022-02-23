@@ -11,7 +11,7 @@ use alloc::{
     vec::Vec,
 };
 use core::any::Any;
-use value::{NumberType, Value, ValueType};
+use value::{Value, ValueType};
 
 pub trait ValidatorBuilder {
     fn add_validation(&mut self, validation: ValidationBox);
@@ -351,8 +351,11 @@ impl Validation for NumberValidator {
         self
     }
     fn validate(&self, value: &Value) -> Result<(), Error> {
-        if value.ty() != ValueType::Number && value.ty() != ValueType::None {
-            panic!("type");
+        if !value.is_number() && value.ty() != ValueType::None {
+            return Err(Error::InvalidType {
+                expected: ValueType::I32,
+                found: value.ty(),
+            });
         }
         let mut errors = Vec::default();
 
@@ -370,7 +373,7 @@ impl Validation for NumberValidator {
 }
 
 impl NumberValidator {
-    pub fn kind(mut self, kind: NumberType) -> Self {
+    pub fn kind(mut self, kind: ValueType) -> Self {
         self.add_validation(Box::new(validation::number_kind(kind)));
         self
     }
