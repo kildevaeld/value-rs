@@ -99,9 +99,16 @@ macro_rules! into_method {
 }
 
 macro_rules! as_method {
-    ($into: ident, $ty: ident, $oty: ty) => {
+    ($into: ident, $as_mut: ident, $ty: ident, $oty: ty) => {
         pub fn $into(&self) -> Option<&$oty> {
             match &self {
+                Value::$ty(v) => Some(v),
+                _ => None,
+            }
+        }
+
+        pub fn $as_mut(&mut self) -> Option<&mut $oty> {
+            match self {
                 Value::$ty(v) => Some(v),
                 _ => None,
             }
@@ -186,18 +193,23 @@ impl Value {
     #[cfg(feature = "datetime")]
     is_method!(is_datetime, DateTime);
 
-    as_method!(as_number, Number, Number);
-    as_method!(as_string, String, String);
-    as_method!(as_bytes, Bytes, Vec<u8>);
-    as_method!(as_bool, Bool, bool);
-    as_method!(as_list, List, Vec<Value>);
-    as_method!(as_map, Map, Map);
-    as_method!(as_char, Char, char);
+    as_method!(as_number, as_number_mut, Number, Number);
+    as_method!(as_string, as_string_mut, String, String);
+    as_method!(as_bytes, as_bytes_mut, Bytes, Vec<u8>);
+    as_method!(as_bool, as_bool_mut, Bool, bool);
+    as_method!(as_list, as_list_mut, List, Vec<Value>);
+    as_method!(as_map, as_map_mut, Map, Map);
+    as_method!(as_char, as_char_as, Char, char);
 
     #[cfg(feature = "datetime")]
-    as_method!(as_date, Date, chrono::NaiveDate);
+    as_method!(as_date, as_date_mut, Date, chrono::NaiveDate);
     #[cfg(feature = "datetime")]
-    as_method!(as_datetime, DateTime, chrono::NaiveDateTime);
+    as_method!(
+        as_datetime,
+        as_datetime_mut,
+        DateTime,
+        chrono::NaiveDateTime
+    );
 
     into_method!(into_string, String, String);
     into_method!(into_bytes, Bytes, Vec<u8>);
@@ -264,6 +276,20 @@ impl Value {
             _ => None,
         }
     }*/
+
+    pub fn remove<S: AsRef<str>>(&mut self, field: S) -> Option<Value> {
+        match self.as_map_mut() {
+            Some(map) => map.remove(field),
+            None => None,
+        }
+    }
+
+    pub fn insert<S: AsRef<str>, V: Into<Value>>(&mut self, field: S, value: V) -> Option<Value> {
+        match self.as_map_mut() {
+            Some(map) => map.insert(field.as_ref(), value.into()),
+            None => None,
+        }
+    }
 }
 
 macro_rules! from_impl {
