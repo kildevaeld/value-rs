@@ -92,6 +92,12 @@ impl Map {
     }
 }
 
+impl Extend<(String, Value)> for Map {
+    fn extend<T: IntoIterator<Item = (String, Value)>>(&mut self, iter: T) {
+        self.inner.extend(iter)
+    }
+}
+
 impl IntoIterator for Map {
     type Item = (String, Value);
     type IntoIter = IntoIter<String, Value>;
