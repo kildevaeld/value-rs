@@ -52,6 +52,7 @@ pub fn from_js<'js>(value: JsValue<'js>) -> Result<Value> {
 
             Ok(Value::Map(out))
         }
+        Type::Int => Ok(Value::Number(value.as_int().unwrap().into())),
         t => {
             todo!("from js: {:?}", t)
         }
