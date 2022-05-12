@@ -1,7 +1,7 @@
 use rquickjs::{
     Array as JsArray, Array, Ctx, Object, Result, String as JsString, Type, Value as JsValue,
 };
-use value::Value;
+use value::{Map, Value};
 
 pub fn into_js<'js>(ctx: Ctx<'js>, value: Value) -> Result<JsValue> {
     match value {
@@ -41,6 +41,17 @@ pub fn from_js<'js>(value: JsValue<'js>) -> Result<Value> {
         }
         Type::String => Ok(Value::String(value.get()?)),
         Type::Null | Type::Undefined | Type::Uninitialized => Ok(Value::None),
+        Type::Object => {
+            let obj = value.into_object().unwrap();
+            let mut out = Map::default();
+            for v in obj.into_iter() {
+                let (k, v) = v?;
+                let k = k.to_string()?;
+                out.insert(k, from_js(v)?);
+            }
+
+            Ok(Value::Map(out))
+        }
         t => {
             todo!("from js: {:?}", t)
         }
