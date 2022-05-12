@@ -1,5 +1,7 @@
 #[cfg(not(feature = "std"))]
 use alloc::boxed::Box;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 pub trait ExprVisitor<T, V> {
     type Output;
@@ -11,6 +13,7 @@ pub trait ExprVisitor<T, V> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 
 pub enum BinaryOperator {
     Eq,
@@ -25,6 +28,8 @@ pub enum BinaryOperator {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+
 pub enum Expr<T, V> {
     Binary(BinaryExpr<T, V>),
     Field(FieldExpr<T>),
@@ -46,7 +51,7 @@ impl<T, V> Expr<T, V> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BinaryExpr<T, V> {
     pub left: Box<Expr<T, V>>,
     pub right: Box<Expr<T, V>>,
@@ -64,12 +69,14 @@ impl<T, V> BinaryExpr<T, V> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 
 pub struct FieldExpr<T> {
     pub name: T,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 
 pub struct RelationExpr<T, V> {
     pub relation: Box<Expr<T, V>>,
@@ -77,6 +84,8 @@ pub struct RelationExpr<T, V> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+
 pub struct ValueExpr<V> {
     pub value: V,
 }
@@ -88,6 +97,8 @@ impl<V> ValueExpr<V> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+
 pub struct EntityExpr<T> {
     pub name: T,
 }
