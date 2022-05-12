@@ -80,7 +80,7 @@ pub fn parse(
                     quote! {
                        stringify!(#name) => {
                             #( #args )*;
-                            self.service.#name(#(#names),*).await
+                            self.#name(#(#names),*).await
                        }
                     }
 
@@ -103,7 +103,7 @@ pub fn parse(
 
     let service = if let Type::Path(next) = name.as_ref() {
         let ident = next.path.get_ident().expect("ident");
-        format_ident!("{}ServiceImpl", ident)
+        format_ident!("{}Service", ident)
     } else {
         panic!("");
     };
@@ -146,6 +146,55 @@ pub fn parse(
             async fn call_method(&self, name: &str, arguments: value_invoke::Arguments) -> Result<value_invoke::value::Value, value_invoke::Error> {
 
                 let interface = match self.params.iter().find(|m| &m.name == name) {
+                    Some(p) => p,
+                    Nome => {
+                        panic!("method not found")
+                    }
+                };
+
+                interface.parameters.validate(&arguments).unwrap();
+
+
+                let ret = match name {
+                    #(#methods),*,
+                    _ => {
+                        unreachable!()
+                    }
+
+                };
+
+                let value = value::to_value(ret.unwrap()).unwrap();
+
+                Ok(value)
+            }
+        }
+
+        impl std::ops::Deref for #service {
+            type Target = #name;
+            fn deref(&self) -> &Self::Target {
+                &self.service
+            }
+        }
+
+        // FIXME: Expriment
+
+        #[value_invoke::async_trait]
+        impl value_invoke::Service for #name {
+
+            fn interface(&self) -> &[value_invoke::Interface] {
+                static PARAMS: value_invoke::once_cell::sync::OnceCell<[value_invoke::Interface; #param_len]> = value_invoke::once_cell::sync::OnceCell::new();
+                PARAMS.get_or_init(|| {
+                    let params: [value_invoke::Interface; #param_len] = [
+                        #(#params),*
+                    ];
+
+                    params
+                })
+            }
+
+            async fn call_method(&self, name: &str, arguments: value_invoke::Arguments) -> Result<value_invoke::value::Value, value_invoke::Error> {
+
+                let interface = match self.interface().iter().find(|m| &m.name == name) {
                     Some(p) => p,
                     Nome => {
                         panic!("method not found")

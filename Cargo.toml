@@ -6,4 +6,5 @@ members = [
   "value-validate",
   "value-macros",
   "value-expr",
+  "value-quickjs",
 ]

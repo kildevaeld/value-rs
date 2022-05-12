@@ -31,7 +31,7 @@ impl Parameter {
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone)]
 pub struct Parameters {
-    params: Arc<Vec<Parameter>>,
+    pub params: Arc<Vec<Parameter>>,
 }
 
 impl Parameters {

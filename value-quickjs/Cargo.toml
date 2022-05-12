@@ -1,0 +1,18 @@
+[package]
+edition = "2021"
+name = "value-quickjs"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rquickjs = {version = "0.1", features = ["futures", "parallel"]}
+value = {path = "../value"}
+value-invoke = {path = "../value-invoke"}
+
+value-validate = {path = "../value-validate", features = ["std", "serde", "derive"]}
+
+[dev-dependencies]
+rquickjs = {version = "0.1", features = ["futures", "parallel", "tokio"]}
+tokio = {version = "1", features = ["macros", "rt"]}
+value-invoke = {path = "../value-invoke", features = []}

@@ -5,6 +5,8 @@ mod into_args;
 mod service;
 mod types;
 
+pub use once_cell;
+
 pub use value_macros::*;
 
 pub use async_trait::async_trait;
