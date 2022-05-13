@@ -1,5 +1,6 @@
 use rquickjs::{
-    Array as JsArray, Array, Ctx, Object, Result, String as JsString, Type, Value as JsValue,
+    Array as JsArray, Array, Ctx, Null as JsNull, Object, Result, String as JsString, Type,
+    Value as JsValue,
 };
 use value::{Map, Value};
 
@@ -17,6 +18,14 @@ pub fn into_js<'js>(ctx: Ctx<'js>, value: Value) -> Result<JsValue> {
 
             Ok(array.into_value())
         }
+        Value::Number(n) => {
+            if n.is_float() {
+                Ok(JsValue::new_float(ctx, n.as_f64()))
+            } else {
+                Ok(JsValue::new_int(ctx, n.as_i64() as i32))
+            }
+        }
+        Value::None => Ok(JsNull.into_value(ctx)),
         Value::Map(map) => {
             let o = Object::new(ctx)?;
             for (k, v) in map.into_iter() {
