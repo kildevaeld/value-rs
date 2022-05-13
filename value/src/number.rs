@@ -190,6 +190,14 @@ impl Number {
             Number::F64(n) => n as f64,
         }
     }
+
+    #[inline]
+    pub fn is_float(&self) -> bool {
+        match self {
+            Number::F32(_) | Number::F64(_) => true,
+            _ => false,
+        }
+    }
 }
 
 macro_rules! expr {
