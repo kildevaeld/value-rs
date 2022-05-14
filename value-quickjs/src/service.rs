@@ -82,9 +82,9 @@ impl<S: Service + Send + Sync + 'static> ClassDef for JsService<S> {
         proto.set(
             "invoke",
             Func::from(Async(Method(
-                |this: &JsService<S>, name: String, value: JsArray<'js>| {
+                |this: &JsService<S>, ctx: Ctx<'js>, name: String, value: JsArray<'js>| {
                     //
-                    let args = into_args(value);
+                    let args = into_args(ctx, value);
                     let this = this.clone();
 
                     async move {

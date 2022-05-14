@@ -48,9 +48,12 @@ macro_rules! js_service {
                 proto.set(
                     "invoke",
                     rquickjs::Func::from(rquickjs::Async(rquickjs::Method(
-                        |this: &$service, name: String, value: rquickjs::Array<'js>| {
+                        |this: &$service,
+                         ctx: rquickjs::Ctx<'js>,
+                         name: String,
+                         value: rquickjs::Array<'js>| {
                             //
-                            let args = $crate::convert::into_args(value);
+                            let args = $crate::convert::into_args(ctx, value);
                             let this = this.clone();
 
                             async move {

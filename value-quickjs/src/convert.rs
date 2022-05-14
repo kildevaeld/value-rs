@@ -1,5 +1,5 @@
 use rquickjs::{
-    intrinsic::TypedArrays, Array as JsArray, Array, Ctx, Null as JsNull, Object, Result,
+    intrinsic::TypedArrays, Array as JsArray, Array, Ctx, Function, Null as JsNull, Object, Result,
     String as JsString, Type, TypedArray, Value as JsValue,
 };
 use value::{Map, Value};
@@ -34,33 +34,81 @@ pub fn into_js<'js>(ctx: Ctx<'js>, value: Value) -> Result<JsValue> {
 
             Ok(o.into_value())
         }
+        Value::Bytes(bs) => Ok(TypedArray::new(ctx, bs)?.into_value()),
+        #[cfg(features = "datetime")]
+        Value::DateTime(datetime) => {
+            let ts = datetime.timestamp_millis();
+
+            let ctor = ctx.globals().get::<_, Function>("Date")?;
+
+            let date = ctor.call::<_, JsValue>((ts,))?;
+
+            Ok(date)
+        }
+        #[cfg(features = "datetime")]
+        Value::Date(date) => {
+            let ts = date.and_hms(24, 0, 0).timestamp_millis();
+
+            let ctor = ctx.globals().get::<_, Function>("Date")?;
+
+            let date = ctor.call::<_, JsValue>((ts,))?;
+
+            Ok(date)
+        }
         v => panic!("{:?}", v),
     }
 }
 
-pub fn from_js<'js>(value: JsValue<'js>) -> Result<Value> {
+macro_rules! call {
+    ($obj: expr, $method: expr) => {{
+        let func: rquickjs::Function = $obj.get($method)?;
+        func.call::<_, u32>((rquickjs::This($obj.clone()),))?
+    }};
+}
+
+pub fn from_js<'js>(ctx: Ctx<'js>, value: JsValue<'js>) -> Result<Value> {
     match value.type_of() {
         Type::Array => {
-            if let Ok(bytes) = TypedArray::<u8>::from_value(value.clone()) {
-                let bs: &[u8] = bytes.as_ref();
-                return Ok(Value::Bytes(bs.to_vec()));
-            }
             let array = value.into_array().unwrap();
             let list = array
                 .iter::<JsValue>()
-                .map(|m| from_js(m.unwrap()))
+                .map(|m| from_js(ctx, m.unwrap()))
                 .collect::<Result<_>>()?;
             Ok(Value::List(list))
         }
         Type::String => Ok(Value::String(value.get()?)),
         Type::Null | Type::Undefined | Type::Uninitialized => Ok(Value::None),
         Type::Object => {
+            let date = ctx.globals().get::<_, JsValue>("Date")?;
+
+            if let Ok(bytes) = TypedArray::<u8>::from_value(value.clone()) {
+                let bs: &[u8] = bytes.as_ref();
+                return Ok(Value::Bytes(bs.to_vec()));
+            } else if value.as_object().unwrap().is_instance_of(&date) {
+                #[cfg(feature = "datetime")]
+                {
+                    let date = value.as_object().unwrap();
+                    let year = call!(date, "getUTCFullYear");
+                    let month = call!(date, "getUTCMonth");
+                    let day = call!(date, "getUTCDate");
+                    let hours = call!(date, "getUTCHours");
+                    let mins = call!(date, "getUTCMinutes");
+                    let secs = call!(date, "getUTCSeconds");
+                    let ms = call!(date, "getUTCMilliseconds");
+                    let date = chrono::Utc
+                        .ymd(year as i32, month, day)
+                        .and_hms_milli(hours, mins, secs, ms);
+
+                    return Ok(Value::DateTime(date.naive_utc()));
+                }
+            }
+
             let obj = value.into_object().unwrap();
             let mut out = Map::default();
             for v in obj.into_iter() {
                 let (k, v) = v?;
                 let k = k.to_string()?;
-                out.insert(k, from_js(v)?);
+                out.insert(k, from_js(ctx, v)?);
             }
 
             Ok(Value::Map(out))
@@ -70,17 +118,11 @@ pub fn from_js<'js>(value: JsValue<'js>) -> Result<Value> {
             todo!("from js: {:?}", t)
         }
     }
-    // if value.is_array() {
-    // } else if value.is_string() {
-    // } else if value.is_bool() {
-    // } else if value.is_float() {
-    // } else if value.is_number() {
-    // }
 }
 
-pub fn into_args<'js>(value: JsArray<'js>) -> Result<Vec<Value>> {
+pub fn into_args<'js>(ctx: Ctx<'js>, value: JsArray<'js>) -> Result<Vec<Value>> {
     value
         .iter::<JsValue>()
-        .map(|m| from_js(m.unwrap()))
+        .map(|m| from_js(ctx, m.unwrap()))
         .collect::<Result<_>>()
 }
