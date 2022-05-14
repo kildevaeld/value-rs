@@ -87,6 +87,7 @@ pub fn from_js<'js>(ctx: Ctx<'js>, value: JsValue<'js>) -> Result<Value> {
             } else if value.as_object().unwrap().is_instance_of(&date) {
                 #[cfg(feature = "datetime")]
                 {
+                    use chrono::TimeZone;
                     let date = value.as_object().unwrap();
                     let year = call!(date, "getUTCFullYear");
                     let month = call!(date, "getUTCMonth");
