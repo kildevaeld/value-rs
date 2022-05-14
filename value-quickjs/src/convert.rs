@@ -35,7 +35,7 @@ pub fn into_js<'js>(ctx: Ctx<'js>, value: Value) -> Result<JsValue> {
             Ok(o.into_value())
         }
         Value::Bytes(bs) => Ok(TypedArray::new(ctx, bs)?.into_value()),
-        #[cfg(features = "datetime")]
+        #[cfg(feature = "datetime")]
         Value::DateTime(datetime) => {
             let ts = datetime.timestamp_millis();
 
@@ -45,7 +45,7 @@ pub fn into_js<'js>(ctx: Ctx<'js>, value: Value) -> Result<JsValue> {
 
             Ok(date)
         }
-        #[cfg(features = "datetime")]
+        #[cfg(feature = "datetime")]
         Value::Date(date) => {
             let ts = date.and_hms(24, 0, 0).timestamp_millis();
 
