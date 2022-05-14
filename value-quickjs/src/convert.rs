@@ -1,6 +1,6 @@
 use rquickjs::{
-    Array as JsArray, Array, Ctx, Null as JsNull, Object, Result, String as JsString, Type,
-    Value as JsValue,
+    intrinsic::TypedArrays, Array as JsArray, Array, Ctx, Null as JsNull, Object, Result,
+    String as JsString, Type, TypedArray, Value as JsValue,
 };
 use value::{Map, Value};
 
@@ -41,6 +41,10 @@ pub fn into_js<'js>(ctx: Ctx<'js>, value: Value) -> Result<JsValue> {
 pub fn from_js<'js>(value: JsValue<'js>) -> Result<Value> {
     match value.type_of() {
         Type::Array => {
+            if let Ok(bytes) = TypedArray::<u8>::from_value(value.clone()) {
+                let bs: &[u8] = bytes.as_ref();
+                return Ok(Value::Bytes(bs.to_vec()));
+            }
             let array = value.into_array().unwrap();
             let list = array
                 .iter::<JsValue>()
