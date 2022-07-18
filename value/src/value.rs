@@ -292,6 +292,8 @@ impl Value {
     }
 }
 
+// From Impls
+
 macro_rules! from_impl {
     ($from: ty, $map: ident) => {
         impl From<$from> for Value {

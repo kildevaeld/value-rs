@@ -66,7 +66,7 @@ impl<S: Service + Send + Sync + 'static> ClassDef for JsService<S> {
                     let mut ret = Map::default();
 
                     ret.insert("name", i.name.clone());
-                    let mut params = Vec::default();
+                    let params = Vec::default();
                     for p in i.parameters.params.iter() {
                         // params.push(p.t)
                     }
@@ -98,7 +98,7 @@ impl<S: Service + Send + Sync + 'static> ClassDef for JsService<S> {
         Ok(())
     }
 
-    fn into_js_obj<'js>(mut self, ctx: Ctx<'js>) -> Result<JsValue<'js>>
+    fn into_js_obj<'js>(self, ctx: Ctx<'js>) -> Result<JsValue<'js>>
     where
         Self: Sized,
     {

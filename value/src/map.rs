@@ -1,7 +1,7 @@
 #[cfg(not(feature = "std"))]
 use alloc::{
     collections::{
-        btree_map::{Entry, IntoIter},
+        btree_map::{Entry, IntoIter, Iter},
         BTreeMap,
     },
     string::{String, ToString},
@@ -9,7 +9,7 @@ use alloc::{
 #[cfg(feature = "std")]
 use std::{
     collections::{
-        btree_map::{Entry, IntoIter},
+        btree_map::{Entry, IntoIter, Iter},
         BTreeMap,
     },
     string::String,
@@ -103,6 +103,14 @@ impl IntoIterator for Map {
     type IntoIter = IntoIter<String, Value>;
     fn into_iter(self) -> Self::IntoIter {
         self.inner.into_iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a Map {
+    type Item = (&'a String, &'a Value);
+    type IntoIter = Iter<'a, String, Value>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.iter()
     }
 }
 

@@ -3,26 +3,8 @@ use core::fmt;
 #[cfg(feature = "ordered_float")]
 use ordered_float_lib::OrderedFloat;
 
-use crate::{Typed, ValueType};
+use crate::ValueType;
 
-// #[cfg_attr(
-//     feature = "serde",
-//     derive(serde_lib::Serialize, serde_lib::Deserialize)
-// )]
-// #[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
-// #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-// pub enum NumberType {
-//     U8,
-//     U16,
-//     U32,
-//     U64,
-//     I8,
-//     I16,
-//     I32,
-//     I64,
-//     F32,
-//     F64,
-// }
 #[cfg_attr(not(feature = "ordered_float"), derive(Debug, Clone, Copy, PartialOrd))]
 #[cfg_attr(
     feature = "ordered_float",

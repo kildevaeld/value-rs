@@ -235,7 +235,8 @@ mod test {
                 "age": 12,
                 "pet": value!({
                     "name": "Bubble",
-                    "type": "guinea pig"
+                    "type": "guinea pig",
+
                 })
             }),
         ];
@@ -249,7 +250,7 @@ mod test {
 
         let predicate = query.accept(&mut visitor);
 
-        let filter = Filter::new(list.into_iter(), predicate);
+        let filter = Filter::new(list, predicate);
 
         // println!("Filted {:#?}", filter.collect::<Vec<_>>());
     }

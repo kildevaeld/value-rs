@@ -24,5 +24,10 @@ pub use self::{index::Index, map::*, merge::*, number::*, typed::*, value::*};
 #[cfg(feature = "serde")]
 pub use self::{de::from_value, ser::to_value};
 
+#[cfg(not(feature = "serde"))]
+pub fn to_value<T: Into<Value>>(value: T) -> Value {
+    value.into()
+}
+
 #[cfg(feature = "std")]
 pub use from_impl::{ConvertError, TryAsRef};

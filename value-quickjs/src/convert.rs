@@ -1,6 +1,6 @@
 use rquickjs::{
-    intrinsic::TypedArrays, Array as JsArray, Array, Ctx, Function, Null as JsNull, Object, Result,
-    String as JsString, Type, TypedArray, Value as JsValue,
+    Array as JsArray, Array, Ctx, Null as JsNull, Object, Result, String as JsString, Type,
+    TypedArray, Value as JsValue,
 };
 use value::{Map, Value};
 

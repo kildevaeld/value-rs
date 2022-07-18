@@ -270,7 +270,7 @@ macro_rules! value_internal {
     // Any Serialize type: numbers, strings, struct literals, variables etc.
     // Must be below every other rule.
     ($other:expr) => {
-        $crate::ser::to_value(&$other).unwrap()
+        $crate::to_value(&$other).unwrap()
     };
 }
 
