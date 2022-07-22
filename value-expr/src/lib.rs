@@ -7,6 +7,8 @@ mod builder;
 mod expr;
 #[cfg(feature = "value")]
 mod predicate;
+#[cfg(feature = "store")]
+mod store;
 
 pub use self::{builder::*, expr::*};
 

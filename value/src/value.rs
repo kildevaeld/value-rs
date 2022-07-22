@@ -321,6 +321,11 @@ from_impl!(Vec<u8>, Bytes);
 from_impl!(Vec<Value>, List);
 from_impl!(BTreeMap<String, Value>, Map);
 
+impl From<()> for Value {
+    fn from(_: ()) -> Value {
+        Value::None
+    }
+}
 impl<'a> From<&'a str> for Value {
     fn from(s: &'a str) -> Value {
         Value::String(s.to_string())

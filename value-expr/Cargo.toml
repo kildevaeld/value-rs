@@ -6,6 +6,7 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+async-trait = {version = "0.1", optional = true}
 serde = {version = "1", features = ["derive"], optional = true}
 value = {path = "../value", optional = true}
 
@@ -13,5 +14,6 @@ value = {path = "../value", optional = true}
 value = {path = "../value", features = ["serde"]}
 
 [features]
-default = ["std", "value", "serde"]
+default = ["std", "value", "serde", "store"]
 std = []
+store = ["async-trait"]
