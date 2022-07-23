@@ -60,11 +60,7 @@ impl<V> ValidatorBuilderCommon for V where V: ValidatorBuilder {}
 
 // pub type ValidatorBox = Box<dyn Validator + Send + Sync>;
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(tag = "type"))]
 #[derive(Debug)]
 pub enum Validator {
@@ -107,11 +103,7 @@ pub fn bool() -> BoolValidator {
     BoolValidator::default()
 }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug)]
 pub struct BoolValidator {
     #[cfg_attr(
@@ -170,11 +162,7 @@ pub fn string() -> StringValidator {
     StringValidator::default()
 }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug)]
 pub struct StringValidator {
     #[cfg_attr(
@@ -234,11 +222,7 @@ pub fn object() -> ObjectValidator {
     ObjectValidator::default()
 }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug)]
 pub struct ObjectValidator {
     #[cfg_attr(feature = "serde", serde(rename = "properties"))]
@@ -326,11 +310,7 @@ pub fn number() -> NumberValidator {
     NumberValidator::default()
 }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug)]
 pub struct NumberValidator {
     #[cfg_attr(
@@ -399,11 +379,7 @@ pub fn list() -> ListValidator {
     ListValidator::default()
 }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug)]
 
 pub struct ListValidator {
@@ -479,11 +455,7 @@ pub fn any_of(validators: Vec<Validator>) -> AnyValidator {
     }
 }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug)]
 
 pub struct AnyValidator {

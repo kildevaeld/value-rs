@@ -6,7 +6,7 @@ use alloc::{
     vec::Vec,
 };
 use core::{fmt, marker::PhantomData};
-use serde_lib::{de, forward_to_deserialize_any};
+use serde::{de, forward_to_deserialize_any};
 #[cfg(feature = "std")]
 use std::collections::BTreeMap;
 
@@ -35,18 +35,18 @@ pub enum Unexpected {
     Other(String),
 }
 
-pub(crate) fn unexpected(value: &Value) -> serde_lib::de::Unexpected {
+pub(crate) fn unexpected(value: &Value) -> serde::de::Unexpected {
     match *value {
-        Value::Bool(b) => serde_lib::de::Unexpected::Bool(b),
+        Value::Bool(b) => serde::de::Unexpected::Bool(b),
         Value::Number(ref n) => number::unexpected(&n),
-        Value::Char(c) => serde_lib::de::Unexpected::Char(c),
-        Value::String(ref s) => serde_lib::de::Unexpected::Str(s),
-        Value::None => serde_lib::de::Unexpected::Option,
-        Value::List(_) => serde_lib::de::Unexpected::Seq,
-        Value::Map(_) => serde_lib::de::Unexpected::Map,
-        Value::Bytes(ref b) => serde_lib::de::Unexpected::Bytes(b),
+        Value::Char(c) => serde::de::Unexpected::Char(c),
+        Value::String(ref s) => serde::de::Unexpected::Str(s),
+        Value::None => serde::de::Unexpected::Option,
+        Value::List(_) => serde::de::Unexpected::Seq,
+        Value::Map(_) => serde::de::Unexpected::Map,
+        Value::Bytes(ref b) => serde::de::Unexpected::Bytes(b),
         #[allow(unreachable_patterns)]
-        _ => serde_lib::de::Unexpected::Map,
+        _ => serde::de::Unexpected::Map,
     }
 }
 

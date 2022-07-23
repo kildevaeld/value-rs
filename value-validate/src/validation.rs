@@ -27,11 +27,7 @@ impl<V> ValidationExt for V where V: Validation {}
  * Required
  */
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Required;
 
@@ -58,11 +54,7 @@ pub fn required() -> Required {
  *
  */
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy)]
 pub struct Min(usize);
 
@@ -91,11 +83,7 @@ pub fn min(v: usize) -> Min {
     Min(v)
 }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy)]
 pub struct Max(usize);
 
@@ -123,11 +111,7 @@ pub fn max(v: usize) -> Max {
     Max(v)
 }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Equal(pub Value);
 
@@ -148,11 +132,7 @@ pub fn equal<V: Into<Value>>(value: V) -> Equal {
     Equal(value.into())
 }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Tuple(pub Vec<ValidationBox>);
 
@@ -193,11 +173,7 @@ pub fn tuple<V: ValidationList>(value: V) -> Tuple {
     Tuple(value.into_list())
 }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct OneOf(pub Vec<ValidationBox>);
 
@@ -229,11 +205,7 @@ pub fn one_of<V: ValidationList>(value: V) -> OneOf {
     OneOf(value.into_list())
 }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Item {
     validator: Validator,
@@ -255,11 +227,7 @@ pub fn item<V: Into<Validator>>(value: V) -> Item {
     }
 }
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct NumberSize(pub ValueType);
 

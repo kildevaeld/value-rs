@@ -100,3 +100,16 @@ both_impl!(bool, into_bool, as_bool, as_bool_mut);
 // both_impl!(Number, into_number, as_number);
 both_impl!(Map, into_map, as_map, as_map_mut);
 both_impl!(Vec<Value>, into_list, as_list, as_list_mut);
+
+impl<'a> TryFrom<&'a Value> for &'a str {
+    type Error = ConvertError;
+    fn try_from(from: &'a Value) -> Result<Self, Self::Error> {
+        match from.as_string() {
+            Some(s) => Ok(s),
+            None => Err(ConvertError {
+                expected: <Self as Typed>::typed(),
+                found: from.ty(),
+            }),
+        }
+    }
+}

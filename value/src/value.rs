@@ -15,13 +15,9 @@ use crate::{number::Number, Map};
 #[cfg(feature = "serde")]
 use super::de::DeserializerError;
 #[cfg(feature = "serde")]
-use serde_lib::de::Deserialize;
+use serde::de::Deserialize;
 
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_lib::Serialize, serde_lib::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(crate = "serde_lib"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub enum ValueType {
     // Numbers

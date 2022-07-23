@@ -1,28 +1,28 @@
 use crate::number::Number;
 use core::fmt;
 use core::marker::PhantomData;
-use serde_lib::{de, forward_to_deserialize_any};
+use serde::{de, forward_to_deserialize_any};
 
 use super::DeserializerError;
 
-pub(crate) fn unexpected(value: &Number) -> serde_lib::de::Unexpected {
+pub(crate) fn unexpected(value: &Number) -> serde::de::Unexpected {
     match *value {
-        Number::U8(n) => serde_lib::de::Unexpected::Unsigned(n as u64),
-        Number::U16(n) => serde_lib::de::Unexpected::Unsigned(n as u64),
-        Number::U32(n) => serde_lib::de::Unexpected::Unsigned(n as u64),
-        Number::U64(n) => serde_lib::de::Unexpected::Unsigned(n),
-        Number::I8(n) => serde_lib::de::Unexpected::Signed(n as i64),
-        Number::I16(n) => serde_lib::de::Unexpected::Signed(n as i64),
-        Number::I32(n) => serde_lib::de::Unexpected::Signed(n as i64),
-        Number::I64(n) => serde_lib::de::Unexpected::Signed(n),
+        Number::U8(n) => serde::de::Unexpected::Unsigned(n as u64),
+        Number::U16(n) => serde::de::Unexpected::Unsigned(n as u64),
+        Number::U32(n) => serde::de::Unexpected::Unsigned(n as u64),
+        Number::U64(n) => serde::de::Unexpected::Unsigned(n),
+        Number::I8(n) => serde::de::Unexpected::Signed(n as i64),
+        Number::I16(n) => serde::de::Unexpected::Signed(n as i64),
+        Number::I32(n) => serde::de::Unexpected::Signed(n as i64),
+        Number::I64(n) => serde::de::Unexpected::Signed(n),
         #[cfg(feature = "ordered_float")]
-        Number::F32(n) => serde_lib::de::Unexpected::Float(*n as f64),
+        Number::F32(n) => serde::de::Unexpected::Float(*n as f64),
         #[cfg(feature = "ordered_float")]
-        Number::F64(n) => serde_lib::de::Unexpected::Float(*n),
+        Number::F64(n) => serde::de::Unexpected::Float(*n),
         #[cfg(not(feature = "ordered_float"))]
-        Number::F32(n) => serde_lib::de::Unexpected::Float(n as f64),
+        Number::F32(n) => serde::de::Unexpected::Float(n as f64),
         #[cfg(not(feature = "ordered_float"))]
-        Number::F64(n) => serde_lib::de::Unexpected::Float(n),
+        Number::F64(n) => serde::de::Unexpected::Float(n),
     }
 }
 

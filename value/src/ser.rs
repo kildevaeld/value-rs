@@ -9,7 +9,7 @@ use alloc::{
     vec::Vec,
 };
 use core::fmt;
-use serde_lib::ser;
+use serde::ser;
 #[cfg(feature = "std")]
 use std::{collections::BTreeMap, string::String};
 
@@ -62,7 +62,7 @@ impl ser::Serialize for Value {
 impl ser::Serialize for Number {
     fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
     where
-        S: serde_lib::Serializer,
+        S: serde::Serializer,
     {
         match *self {
             Number::U8(v) => s.serialize_u8(v),

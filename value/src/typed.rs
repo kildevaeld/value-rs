@@ -42,3 +42,9 @@ ty_impl!(BTreeMap<String, Value>, Map);
 ty_impl!(Map, Map);
 ty_impl!(Vec<Value>, List);
 ty_impl!(Vec<u8>, Bytes);
+
+impl<'a> Typed for &'a str {
+    fn typed() -> ValueType {
+        ValueType::String
+    }
+}

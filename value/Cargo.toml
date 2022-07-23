@@ -6,7 +6,7 @@ version = "0.1.0"
 [dependencies]
 chrono = {version = "0.4", default-features = false, optional = true, features = ["serde"]}
 ordered_float_lib = {version = "2", default-features = false, package = "ordered-float", optional = true}
-serde_lib = {version = "1", default-features = false, features = ["alloc", "derive"], package = "serde", optional = true}
+serde = {version = "1", default-features = false, features = ["alloc", "derive"], optional = true}
 slog = {version = "2", optional = true}
 
 [features]
@@ -18,5 +18,5 @@ full = [
   "serde",
 ]
 ordered_float = ["ordered_float_lib"]
-serde = ["serde_lib", "std"]
+serde = ["dep:serde", "std"]
 std = []
