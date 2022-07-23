@@ -1,7 +1,7 @@
 use core::fmt;
 pub use std::convert::TryFrom;
 
-use crate::{Map, Typed, Value, ValueType};
+use crate::{Map, Number, Typed, Value, ValueType};
 
 #[derive(Debug, Clone)]
 pub struct ConvertError {
@@ -44,7 +44,7 @@ macro_rules! from_impl {
 }
 
 macro_rules! try_as_ref {
-    ($type: ty, $method: ident) => {
+    ($type: ty, $method: ident, $method_mut: ident) => {
         impl TryAsRef<$type> for Value {
             type Error = ConvertError;
             fn try_as_ref(&self) -> Result<&$type, Self::Error> {
@@ -57,18 +57,46 @@ macro_rules! try_as_ref {
                 }
             }
         }
+
+        impl<'a> TryFrom<&'a Value> for &'a $type {
+            type Error = ConvertError;
+            fn try_from(from: &'a Value) -> Result<Self, Self::Error> {
+                match from.$method() {
+                    Some(s) => Ok(s),
+                    None => Err(ConvertError {
+                        expected: <$type as Typed>::typed(),
+                        found: from.ty(),
+                    }),
+                }
+            }
+        }
+
+        impl<'a> TryFrom<&'a mut Value> for &'a mut $type {
+            type Error = ConvertError;
+            fn try_from(from: &'a mut Value) -> Result<Self, Self::Error> {
+                let found = from.ty();
+                match from.$method_mut() {
+                    Some(s) => Ok(s),
+                    None => Err(ConvertError {
+                        expected: <$type as Typed>::typed(),
+                        found,
+                    }),
+                }
+            }
+        }
     };
 }
 
 macro_rules! both_impl {
-    ($type: ty, $from: ident, $as: ident) => {
+    ($type: ty, $from: ident, $as: ident, $as_mut: ident) => {
         from_impl!($type, $from);
-        try_as_ref!($type, $as);
+        try_as_ref!($type, $as, $as_mut);
     };
 }
 
-both_impl!(String, into_string, as_string);
-both_impl!(Vec<u8>, into_bytes, as_bytes);
+both_impl!(String, into_string, as_string, as_string_mut);
+both_impl!(Vec<u8>, into_bytes, as_bytes, as_bytes_mut);
+both_impl!(bool, into_bool, as_bool, as_bool_mut);
 // both_impl!(Number, into_number, as_number);
-both_impl!(Map, into_map, as_map);
-both_impl!(Vec<Value>, into_list, as_list);
+both_impl!(Map, into_map, as_map, as_map_mut);
+both_impl!(Vec<Value>, into_list, as_list, as_list_mut);
