@@ -56,7 +56,7 @@ impl Index for usize {
                     )
                 })
             }
-            _ => panic!("cannot access index {} of JSON {:?}", self, v.ty()),
+            _ => panic!("cannot access index {} of JSON {:?}", self, v),
         }
     }
 }
@@ -80,7 +80,7 @@ impl Index for str {
         }
         match *v {
             Value::Map(ref mut map) => map.entry(self.to_owned()).or_insert(Value::None),
-            _ => panic!("cannot access key {:?} in JSON {:?}", self, v.ty()),
+            _ => panic!("cannot access key {:?} in JSON {:?}", self, v),
         }
     }
 }

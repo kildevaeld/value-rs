@@ -1,14 +1,13 @@
 #[cfg(not(feature = "std"))]
 use alloc::{
-    borrow::ToOwned,
-    collections::BTreeMap,
-    format,
-    string::{String, ToString},
-    vec,
+    // borrow::ToOwned,
+    // collections::BTreeMap,
+    // format,
+    string::String,
     vec::Vec,
 };
 #[cfg(feature = "std")]
-use std::{collections::BTreeMap, string::String};
+use std::string::String;
 
 use crate::{number::Number, Map};
 
@@ -17,68 +16,70 @@ use super::de::DeserializerError;
 #[cfg(feature = "serde")]
 use serde::de::Deserialize;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-pub enum ValueType {
-    // Numbers
-    U8,
-    U16,
-    U32,
-    U64,
-    I8,
-    I16,
-    I32,
-    I64,
-    F32,
-    F64,
+// #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+// #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+// pub enum ValueType {
+//     // Numbers
+//     U8,
+//     U16,
+//     U32,
+//     U64,
+//     I8,
+//     I16,
+//     I32,
+//     I64,
+//     F32,
+//     F64,
 
-    Bool,
-    Char,
-    String,
-    List,
-    Map,
-    Bytes,
-    None,
-    #[cfg(feature = "datetime")]
-    Date,
-    #[cfg(feature = "datetime")]
-    DateTime,
-}
+//     Bool,
+//     Char,
+//     String,
+//     List,
+//     Map,
+//     Bytes,
+//     None,
+//     #[cfg(feature = "datetime")]
+//     Date,
+//     #[cfg(feature = "datetime")]
+//     DateTime,
+// }
 
-impl ValueType {
-    // pub fn can_cast(&self, ty: &ValueType) -> bool {
-    //     use ValueType::*;
-    //     if self == ty {
-    //         return true;
-    //     }
+// impl ValueType {
+//     // pub fn can_cast(&self, ty: &ValueType) -> bool {
+//     //     use ValueType::*;
+//     //     if self == ty {
+//     //         return true;
+//     //     }
 
-    //     match (*self, *ty) {
-    //         (Number, Number | String | Bool | Char) => true,
-    //         #[cfg(feature = "datetime")]
-    //         (DateTime | Date, Date | DateTime | String) => true,
-    //         (Bool, Number | String | Char) => true,
-    //         (Char, Bool | Number | String) => true,
-    //         (Map | List | String, Bool) => true,
-    //         (String, Bytes) => true,
-    //         (Map, List) => true,
-    //         (_, List) => true,
-    //         _ => false,
-    //     }
-    // }
+//     //     match (*self, *ty) {
+//     //         (Number, Number | String | Bool | Char) => true,
+//     //         #[cfg(feature = "datetime")]
+//     //         (DateTime | Date, Date | DateTime | String) => true,
+//     //         (Bool, Number | String | Char) => true,
+//     //         (Char, Bool | Number | String) => true,
+//     //         (Map | List | String, Bool) => true,
+//     //         (String, Bytes) => true,
+//     //         (Map, List) => true,
+//     //         (_, List) => true,
+//     //         _ => false,
+//     //     }
+//     // }
 
-    pub fn is_number(&self) -> bool {
-        match self {
-            ValueType::U8 | ValueType::I8 => true,
-            _ => false,
-        }
-    }
-}
+//     pub fn is_number(&self) -> bool {
+//         match self {
+//             ValueType::U8 | ValueType::I8 => true,
+//             _ => false,
+//         }
+//     }
+// }
 
 macro_rules! is_method {
-    ($check: ident, $ty: expr) => {
+    ($check: ident, $ty: ident) => {
         pub fn $check(&self) -> bool {
-            use ValueType::*;
-            self.ty() == $ty
+            match self {
+                Value::$ty(_) => true,
+                _ => false,
+            }
         }
     };
 }
@@ -136,37 +137,37 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn default_type(ty: ValueType) -> Value {
-        match ty {
-            ValueType::Bool => Value::Bool(false),
-            ValueType::Bytes => Value::Bytes(Vec::default()),
-            ValueType::Char => Value::Char(' '),
-            ValueType::List => Value::List(Vec::default()),
-            ValueType::Map => Value::Map(Map::default()),
-            _ => todo!(""),
-        }
-    }
+    // pub fn default_type(ty: ValueType) -> Value {
+    //     match ty {
+    //         ValueType::Bool => Value::Bool(false),
+    //         ValueType::Bytes => Value::Bytes(Vec::default()),
+    //         ValueType::Char => Value::Char(' '),
+    //         ValueType::List => Value::List(Vec::default()),
+    //         ValueType::Map => Value::Map(Map::default()),
+    //         _ => todo!(""),
+    //     }
+    // }
 
-    pub fn ty(&self) -> ValueType {
-        match self {
-            Value::Bool(_) => ValueType::Bool,
-            Value::Number(n) => n.ty(),
-            Value::Char(_) => ValueType::Char,
-            Value::String(_) => ValueType::String,
-            Value::None => ValueType::None,
-            Value::List(_) => ValueType::List,
-            Value::Map(_) => ValueType::Map,
-            Value::Bytes(_) => ValueType::Bytes,
-            #[cfg(feature = "datetime")]
-            Value::Date(_) => ValueType::Date,
-            #[cfg(feature = "datetime")]
-            Value::DateTime(_) => ValueType::DateTime,
-        }
-    }
+    // pub fn ty(&self) -> ValueType {
+    //     match self {
+    //         Value::Bool(_) => ValueType::Bool,
+    //         Value::Number(n) => n.ty(),
+    //         Value::Char(_) => ValueType::Char,
+    //         Value::String(_) => ValueType::String,
+    //         Value::None => ValueType::None,
+    //         Value::List(_) => ValueType::List,
+    //         Value::Map(_) => ValueType::Map,
+    //         Value::Bytes(_) => ValueType::Bytes,
+    //         #[cfg(feature = "datetime")]
+    //         Value::Date(_) => ValueType::Date,
+    //         #[cfg(feature = "datetime")]
+    //         Value::DateTime(_) => ValueType::DateTime,
+    //     }
+    // }
 
-    pub fn is(&self, ty: ValueType) -> bool {
-        self.ty() == ty
-    }
+    // pub fn is(&self, ty: ValueType) -> bool {
+    //     self.ty() == ty
+    // }
 
     pub fn is_number(&self) -> bool {
         match self {
@@ -182,7 +183,14 @@ impl Value {
     is_method!(is_list, List);
     is_method!(is_map, Map);
     is_method!(is_char, Char);
-    is_method!(is_none, None);
+
+    pub fn is_none(&self) -> bool {
+        match self {
+            Value::None => true,
+            _ => false,
+        }
+    }
+    // is_method!(is_none, None);
 
     #[cfg(feature = "datetime")]
     is_method!(is_date, Date);
@@ -290,73 +298,73 @@ impl Value {
 
 // From Impls
 
-macro_rules! from_impl {
-    ($from: ty, $map: ident) => {
-        impl From<$from> for Value {
-            fn from(from: $from) -> Value {
-                Value::$map(from.into())
-            }
-        }
-    };
-}
+// macro_rules! from_impl {
+//     ($from: ty, $map: ident) => {
+//         impl From<$from> for Value {
+//             fn from(from: $from) -> Value {
+//                 Value::$map(from.into())
+//             }
+//         }
+//     };
+// }
 
-macro_rules! from_number_impl {
-    ($from: ty) => {
-        impl From<$from> for Value {
-            fn from(from: $from) -> Value {
-                Value::Number(from.into())
-            }
-        }
-    };
-}
+// macro_rules! from_number_impl {
+//     ($from: ty) => {
+//         impl From<$from> for Value {
+//             fn from(from: $from) -> Value {
+//                 Value::Number(from.into())
+//             }
+//         }
+//     };
+// }
 
-from_impl!(bool, Bool);
-from_impl!(Number, Number);
-from_impl!(String, String);
-from_impl!(Vec<u8>, Bytes);
-from_impl!(Vec<Value>, List);
-from_impl!(BTreeMap<String, Value>, Map);
+// from_impl!(bool, Bool);
+// from_impl!(Number, Number);
+// from_impl!(String, String);
+// from_impl!(Vec<u8>, Bytes);
+// from_impl!(Vec<Value>, List);
+// from_impl!(BTreeMap<String, Value>, Map);
 
-impl From<()> for Value {
-    fn from(_: ()) -> Value {
-        Value::None
-    }
-}
-impl<'a> From<&'a str> for Value {
-    fn from(s: &'a str) -> Value {
-        Value::String(s.to_string())
-    }
-}
+// impl From<()> for Value {
+//     fn from(_: ()) -> Value {
+//         Value::None
+//     }
+// }
+// impl<'a> From<&'a str> for Value {
+//     fn from(s: &'a str) -> Value {
+//         Value::String(s.to_string())
+//     }
+// }
 
-impl<'a> From<&'a [u8]> for Value {
-    fn from(s: &'a [u8]) -> Value {
-        Value::Bytes(s.to_owned())
-    }
-}
+// impl<'a> From<&'a [u8]> for Value {
+//     fn from(s: &'a [u8]) -> Value {
+//         Value::Bytes(s.to_owned())
+//     }
+// }
 
-from_number_impl!(u8);
-from_number_impl!(i8);
-from_number_impl!(u16);
-from_number_impl!(i16);
-from_number_impl!(i32);
-from_number_impl!(u32);
-from_number_impl!(i64);
-from_number_impl!(u64);
+// from_number_impl!(u8);
+// from_number_impl!(i8);
+// from_number_impl!(u16);
+// from_number_impl!(i16);
+// from_number_impl!(i32);
+// from_number_impl!(u32);
+// from_number_impl!(i64);
+// from_number_impl!(u64);
 
-impl From<f32> for Value {
-    fn from(s: f32) -> Value {
-        Value::Number(s.into())
-    }
-}
+// impl From<f32> for Value {
+//     fn from(s: f32) -> Value {
+//         Value::Number(s.into())
+//     }
+// }
 
-impl From<f64> for Value {
-    fn from(s: f64) -> Value {
-        Value::Number(s.into())
-    }
-}
+// impl From<f64> for Value {
+//     fn from(s: f64) -> Value {
+//         Value::Number(s.into())
+//     }
+// }
 
-impl AsRef<Value> for Value {
-    fn as_ref(&self) -> &Value {
-        self
-    }
-}
+// impl AsRef<Value> for Value {
+//     fn as_ref(&self) -> &Value {
+//         self
+//     }
+// }
