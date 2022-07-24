@@ -64,6 +64,13 @@ mod try_from {
                 FromValueErr::Value(v) => v,
             }
         }
+
+        pub fn to_owned(self) -> FromValueErr<'static> {
+            match self {
+                FromValueErr::Ref(v) => FromValueErr::Value(v.clone()),
+                FromValueErr::Value(v) => FromValueErr::Value(v),
+            }
+        }
     }
 
     impl<'a> fmt::Display for FromValueErr<'a> {
