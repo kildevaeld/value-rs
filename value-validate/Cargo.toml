@@ -8,16 +8,18 @@ version = "0.1.0"
 [dependencies]
 sealed = "0.4"
 serde = {version = "1", default-features = false, features = ["derive", "alloc"], optional = true}
-typetag = {version = "0.1", optional = true}
+typetag = {version = "0.2", optional = true}
 value = {path = "../value"}
-
 value-macros = {path = "../value-macros", optional = true}
+value-types = {path = "../value-types"}
+
+thiserror = "1"
 
 [dev-dependencies]
 serde_json = "1"
 
 [features]
-default = []
+default = ["serde"]
 derive = ["value-macros"]
-serde = ["typetag", "value/serde", "dep:serde", "std"]
+serde = ["typetag", "value/serde", "value-types/serde", "dep:serde", "std"]
 std = []

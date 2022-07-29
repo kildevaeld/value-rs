@@ -1,7 +1,7 @@
 use crate::{
     types::ValidationList,
-    validation::{self, Validation, ValidationBox},
-    Error,
+    validation::{Validation, ValidationBox},
+    validations, Error, ValidationError,
 };
 use alloc::collections::BTreeMap;
 use alloc::{
@@ -11,7 +11,8 @@ use alloc::{
     vec::Vec,
 };
 use core::any::Any;
-use value::{Value, ValueType};
+use value::Value;
+use value_types::{ValueExt, ValueType};
 
 pub trait ValidatorBuilder {
     fn add_validation(&mut self, validation: ValidationBox);
@@ -31,27 +32,27 @@ impl<V> ValidatorBuilderExt for V where V: ValidatorBuilder {}
 
 pub trait ValidatorBuilderCommon: ValidatorBuilder + Sized {
     fn min(mut self, size: usize) -> Self {
-        self.add_validation(Box::new(validation::min(size)));
+        self.add_validation(Box::new(validations::min(size)));
         self
     }
 
     fn max(mut self, size: usize) -> Self {
-        self.add_validation(Box::new(validation::max(size)));
+        self.add_validation(Box::new(validations::max(size)));
         self
     }
 
     fn required(mut self) -> Self {
-        self.add_validation(Box::new(validation::required()));
+        self.add_validation(Box::new(validations::required()));
         self
     }
 
     fn equal(mut self, value: impl Into<Value>) -> Self {
-        self.add_validation(Box::new(validation::equal(value)));
+        self.add_validation(Box::new(validations::equal(value)));
         self
     }
 
     fn one_of<V: ValidationList>(mut self, value: V) -> Self {
-        self.add_validation(Box::new(validation::one_of(value)));
+        self.add_validation(Box::new(validations::one_of(value)));
         self
     }
 }
@@ -83,7 +84,7 @@ impl Validation for Validator {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    fn validate(&self, value: &Value) -> Result<(), Error> {
+    fn validate(&self, value: &Value) -> Result<(), ValidationError> {
         match self {
             Validator::Bool(b) => b.validate(value),
             Validator::String(s) => s.validate(value),
@@ -123,7 +124,7 @@ impl Validation for BoolValidator {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    fn validate(&self, value: &Value) -> Result<(), Error> {
+    fn validate(&self, value: &Value) -> Result<(), ValidationError> {
         if value.ty() != ValueType::String && value.ty() != ValueType::None {
             panic!("type");
         }
@@ -136,7 +137,7 @@ impl Validation for BoolValidator {
         }
 
         if !errors.is_empty() {
-            return Err(Error::Multi(errors));
+            return Err(ValidationError::Multi(errors));
         }
         Ok(())
     }
@@ -182,7 +183,7 @@ impl Validation for StringValidator {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    fn validate(&self, value: &Value) -> Result<(), Error> {
+    fn validate(&self, value: &Value) -> Result<(), ValidationError> {
         if value.ty() != ValueType::String && value.ty() != ValueType::None {
             panic!("type");
         }
@@ -195,7 +196,7 @@ impl Validation for StringValidator {
         }
 
         if !errors.is_empty() {
-            return Err(Error::Multi(errors));
+            return Err(ValidationError::Multi(errors));
         }
         Ok(())
     }
@@ -251,13 +252,13 @@ impl Validation for ObjectValidator {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    fn validate(&self, value: &Value) -> Result<(), Error> {
+    fn validate(&self, value: &Value) -> Result<(), ValidationError> {
         let map = match value.as_map() {
             Some(v) => v,
             None => {
-                return Err(Error::InvalidType {
-                    found: value.ty(),
-                    expected: ValueType::Map,
+                return Err(ValidationError::InvalidType {
+                    found: value.ty().into(),
+                    expected: ValueType::Map.into(),
                 })
             }
         };
@@ -285,7 +286,7 @@ impl Validation for ObjectValidator {
         if errors.is_empty() {
             Ok(())
         } else {
-            Err(Error::Multi(errors))
+            Err(ValidationError::Multi(errors))
         }
     }
 }
@@ -330,11 +331,11 @@ impl Validation for NumberValidator {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    fn validate(&self, value: &Value) -> Result<(), Error> {
+    fn validate(&self, value: &Value) -> Result<(), ValidationError> {
         if !value.is_number() && value.ty() != ValueType::None {
-            return Err(Error::InvalidType {
-                expected: ValueType::I32,
-                found: value.ty(),
+            return Err(ValidationError::InvalidType {
+                expected: ValueType::I32.into(),
+                found: value.ty().into(),
             });
         }
         let mut errors = Vec::default();
@@ -346,7 +347,7 @@ impl Validation for NumberValidator {
         }
 
         if !errors.is_empty() {
-            return Err(Error::Multi(errors));
+            return Err(ValidationError::Multi(errors));
         }
         Ok(())
     }
@@ -354,7 +355,7 @@ impl Validation for NumberValidator {
 
 impl NumberValidator {
     pub fn kind(mut self, kind: ValueType) -> Self {
-        self.add_validation(Box::new(validation::number_kind(kind)));
+        self.add_validation(Box::new(validations::number_kind(kind)));
         self
     }
 }
@@ -400,7 +401,7 @@ impl Validation for ListValidator {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    fn validate(&self, value: &Value) -> Result<(), Error> {
+    fn validate(&self, value: &Value) -> Result<(), ValidationError> {
         if value.ty() != ValueType::List && value.ty() != ValueType::None {
             panic!("type");
         }
@@ -413,7 +414,7 @@ impl Validation for ListValidator {
         }
 
         if !errors.is_empty() {
-            return Err(Error::Multi(errors));
+            return Err(ValidationError::Multi(errors));
         }
         Ok(())
     }
@@ -482,7 +483,7 @@ impl Validation for AnyValidator {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    fn validate(&self, value: &Value) -> Result<(), Error> {
+    fn validate(&self, value: &Value) -> Result<(), ValidationError> {
         let mut errors = Vec::default();
 
         for v in &self.vals {
@@ -492,7 +493,7 @@ impl Validation for AnyValidator {
         }
 
         if !errors.is_empty() {
-            return Err(Error::Multi(errors));
+            return Err(ValidationError::Multi(errors));
         }
         Ok(())
     }

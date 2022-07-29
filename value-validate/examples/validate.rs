@@ -8,8 +8,9 @@ fn main() {
             "name",
             string()
                 .required()
-                .one_of((equal("Rasmus"), equal("Feja"), any()))
-                .max(100),
+                .one_of((equal("Rasmus"), equal("Feja")))
+                .max(6)
+                .min(3),
         )
         .field("age", number().min(18).max(100).required())
         .field(
@@ -35,6 +36,8 @@ fn main() {
     // }))
     // .unwrap();
 
+    println!("validation: {}", serde_json::to_string_pretty(&o).unwrap());
+
     println!(
         "{:#?}",
         &value!({
@@ -49,7 +52,7 @@ fn main() {
         })
     );
     o.validate(&value!({
-        "name": "Rasmus1",
+        "name": "Rasmus2",
         "age": 18,
         "list": [
             "test",

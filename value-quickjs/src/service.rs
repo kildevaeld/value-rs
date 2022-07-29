@@ -6,7 +6,7 @@ use rquickjs::{
 };
 use rquickjs::{Ctx, Func};
 use value::{Map, Value};
-use value_invoke::{IntoArguments, Service, ServiceExt};
+// use value_invoke::{IntoArguments, Service, ServiceExt};
 
 use crate::convert::{self, from_js, into_args, into_js};
 use crate::response::Response;

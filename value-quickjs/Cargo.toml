@@ -12,13 +12,13 @@ default = []
 [dependencies]
 rquickjs = {version = "0.1", features = ["futures", "array-buffer"]}
 value = {path = "../value"}
-value-invoke = {path = "../value-invoke"}
+# value-invoke = {path = "../value-invoke"}
 
-value-validate = {path = "../value-validate", features = ["std", "serde", "derive"]}
+# value-validate = {path = "../value-validate", features = ["std", "serde", "derive"]}
 
 chrono = {version = "0.4", optional = true}
 
 [dev-dependencies]
 rquickjs = {version = "0.1", features = ["futures", "parallel", "tokio"]}
 tokio = {version = "1", features = ["macros", "rt"]}
-value-invoke = {path = "../value-invoke", features = []}
+# value-invoke = {path = "../value-invoke", features = []}

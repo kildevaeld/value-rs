@@ -1,7 +1,8 @@
 [workspace]
 
 members = [
-  "value", # "value-invoke",  # "value-validate",
+  "value", # "value-invoke",  
+  "value-validate",
   "value-macros",
   "value-expr",
   "value-types",

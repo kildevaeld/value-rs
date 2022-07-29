@@ -3,7 +3,7 @@ use crate::{
     Validator, ValidatorBuilderExt,
 };
 use alloc::{collections::BTreeMap, vec, vec::Vec};
-use value::ValueType;
+use value_types::ValueType;
 
 macro_rules! validatable_number {
     ($($ty: ident => $kind: ident),*) => {

@@ -52,9 +52,9 @@ impl<T> IntoValue for super::Serde<T>
 where
     T: serde::Serialize,
 {
-    type Error = crate::ser::SerializerError;
+    type Error = value::ser::SerializerError;
     fn into_value(self) -> Result<Value, Self::Error> {
-        crate::to_value(self.0)
+        value::to_value(self.0)
     }
 }
 

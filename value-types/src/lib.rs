@@ -4,4 +4,4 @@ mod typings;
 
 mod value_ext;
 
-pub use self::{convert::*, has_type::HasType, typings::*};
+pub use self::{convert::*, has_type::HasType, typings::*, value_ext::*};
