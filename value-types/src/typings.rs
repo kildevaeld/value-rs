@@ -38,6 +38,17 @@ pub struct StructDef<S> {
 }
 
 impl<S> StructDef<S> {
+    pub fn new(name: impl Into<Option<S>>) -> StructDef<S> {
+        StructDef {
+            name: name.into(),
+            fields: Vec::default(),
+        }
+    }
+    pub fn with_field(mut self, name: impl Into<S>, field: TypeDef<S>) -> Self {
+        self.fields.push((name.into(), field));
+        self
+    }
+
     pub fn fields(&self) -> &Vec<(S, TypeDef<S>)> {
         &self.fields
     }
@@ -66,14 +77,14 @@ impl<S> From<StructDef<S>> for TypeDef<S> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TupleDef<S> {
     name: Option<S>,
-    fields: Vec<TypeDef<S>>,
+    members: Vec<TypeDef<S>>,
 }
 
 impl<S: Into<Cow<'static, str>>> TupleDef<S> {
     pub fn to_owned(self) -> TupleDef<Cow<'static, str>> {
         TupleDef {
             name: self.name.map(|m| m.into()),
-            fields: self.fields.into_iter().map(|m| m.to_owned()).collect(),
+            members: self.members.into_iter().map(|m| m.to_owned()).collect(),
         }
     }
 }

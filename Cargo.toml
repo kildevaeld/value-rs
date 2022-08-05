@@ -7,4 +7,5 @@ members = [
   "value-expr",
   "value-types",
   "value-quickjs",
+  "value-service",
 ]

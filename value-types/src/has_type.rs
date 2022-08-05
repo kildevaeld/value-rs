@@ -1,6 +1,9 @@
-use std::collections::BTreeMap;
+use std::{borrow::Cow, collections::BTreeMap};
 
-use crate::typings::{TypeDef, ValueType};
+use crate::{
+    typings::{TypeDef, ValueType},
+    StructDef, ValueExt,
+};
 use value::{Map, Value};
 
 pub trait HasType {
@@ -49,3 +52,47 @@ ty_impl!(Map, Map);
 ty_impl!(Vec<Value>, List);
 ty_impl!(Vec<u8>, Bytes);
 ty_impl!((), None);
+
+pub trait HasTypeDef<'a> {
+    type String: Into<Cow<'a, str>>;
+    fn type_def(&'a self) -> TypeDef<Self::String>;
+}
+
+impl<'a> HasTypeDef<'a> for Value {
+    type String = &'a String;
+    fn type_def(&'a self) -> TypeDef<&'a String> {
+        match self {
+            Value::Map(map) => map.type_def(),
+            _ => self.ty().into(),
+        }
+    }
+}
+
+impl<'a> HasTypeDef<'a> for Map {
+    type String = &'a String;
+    fn type_def(&'a self) -> TypeDef<&'a String> {
+        let mut st = StructDef::new(None);
+
+        for (k, v) in self.iter() {
+            let field = v.type_def();
+            st = st.with_field(k, field);
+        }
+
+        st.into()
+    }
+}
+
+macro_rules! has_type_def {
+    ($($name: ty)*) => {
+        $(
+            impl<'a> HasTypeDef<'a> for $name {
+                type String = &'a str;
+                fn type_def(&'a self) -> TypeDef<&'a str> {
+                    <$name as HasType>::typed().into()
+                }
+            }
+        )*
+    };
+}
+
+has_type_def!(i8 u8 i16 u16 i32 u32 i64 u64 String bool BTreeMap<String, Value>);
