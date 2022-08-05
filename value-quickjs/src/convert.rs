@@ -39,7 +39,7 @@ pub fn into_js<'js>(ctx: Ctx<'js>, value: Value) -> Result<JsValue> {
         Value::DateTime(datetime) => {
             let ts = datetime.timestamp_millis();
 
-            let ctor = ctx.globals().get::<_, Function>("Date")?;
+            let ctor = ctx.globals().get::<_, rquickjs::Function>("Date")?;
 
             let date = ctor.call::<_, JsValue>((ts,))?;
 
@@ -49,7 +49,7 @@ pub fn into_js<'js>(ctx: Ctx<'js>, value: Value) -> Result<JsValue> {
         Value::Date(date) => {
             let ts = date.and_hms(24, 0, 0).timestamp_millis();
 
-            let ctor = ctx.globals().get::<_, Function>("Date")?;
+            let ctor = ctx.globals().get::<_, rquickjs::Function>("Date")?;
 
             let date = ctor.call::<_, JsValue>((ts,))?;
 
