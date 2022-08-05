@@ -1,47 +1,24 @@
-use std::{borrow::Cow, collections::BTreeMap, marker::PhantomData};
-
 use crate::{
-    action_box,
-    arguments::{Arguments, ToArguments},
+    arguments::Arguments,
     errors::Error,
-    service_ext::ServiceExt,
-    Action, ActionBox, Parameters, Signature,
+    service::{Service, ServiceDescription},
+    dale_ext::ServiceExt,
+    Action,
 };
 use async_trait::async_trait;
-use dale::{BoxService, IntoOutcome, Outcome, ServiceExt as _};
-use futures_core::future::BoxFuture;
+use dale::{BoxService, IntoOutcome, ServiceExt as _};
+use std::{collections::BTreeMap, marker::PhantomData};
 use value::Value;
-use value_types::FromValue;
 
-#[derive(Debug, Clone)]
-pub struct ServiceDescription<S> {
-    pub name: Option<S>,
-    pub methods: BTreeMap<S, Signature>,
-}
-
-#[async_trait]
-pub trait ValueService<C> {
-    fn description(&self) -> &ServiceDescription<String>;
-
-    async fn call<O: FromValue + 'static, A: ToArguments + Send>(
-        &self,
-        ctx: C,
-        name: &str,
-        args: A,
-    ) -> Result<O, Error>
-    where
-        O::Error: std::error::Error + Send + Sync + 'static;
-}
-
-pub struct ValueServiceBuilder<C> {
+pub struct ServiceBuilder<C> {
     services: BTreeMap<String, BoxService<'static, (C, Arguments), Value, Error>>,
     desc: ServiceDescription<String>,
     _c: PhantomData<C>,
 }
 
-impl<C> Default for ValueServiceBuilder<C> {
+impl<C> Default for ServiceBuilder<C> {
     fn default() -> Self {
-        ValueServiceBuilder {
+        ServiceBuilder {
             services: BTreeMap::default(),
             desc: ServiceDescription {
                 name: None,
@@ -52,7 +29,7 @@ impl<C> Default for ValueServiceBuilder<C> {
     }
 }
 
-impl<C> ValueServiceBuilder<C> {
+impl<C> ServiceBuilder<C> {
     pub fn add<A>(&mut self, name: &str, action: A) -> &mut Self
     where
         C: Send + 'static,
@@ -86,23 +63,16 @@ impl<C> ValueServiceBuilder<C> {
 }
 
 #[async_trait]
-impl<C> ValueService<C> for ValueServiceBuilder<C>
+impl<C> Service<C> for ServiceBuilder<C>
 where
     C: Send + Sync,
 {
+    type Error = Error;
     fn description(&self) -> &ServiceDescription<String> {
         &self.desc
     }
 
-    async fn call<O: FromValue + 'static, A: ToArguments + Send>(
-        &self,
-        ctx: C,
-        name: &str,
-        args: A,
-    ) -> Result<O, Error>
-    where
-        O::Error: std::error::Error + Send + Sync + 'static,
-    {
+    async fn call(&self, ctx: C, name: &str, args: Arguments) -> Result<Value, Error> {
         let service = match self.services.get(name) {
             Some(service) => service,
             None => return Err(Error::NotFound),

@@ -155,7 +155,7 @@ where
             };
 
             let ret = match handler.call(input, args).await.into_outcome() {
-                Outcome::Failure(err) => panic!(),
+                Outcome::Failure(err) => Outcome::Failure(err.into()),
                 Outcome::Next(_) => panic!(),
                 Outcome::Success(ret) => Outcome::Success(ret.into()),
             };
@@ -171,20 +171,5 @@ where
 {
     fn signature(&self) -> &crate::Signature {
         &self.sign
-    }
-}
-
-#[cfg(test)]
-mod test {
-
-    use super::*;
-
-    #[test]
-    fn test() {
-        let action: HandleAction<_, i32> =
-            HandleFn::new(|arg: String, next: String| async move { 2000u64 }).action();
-
-        println!("PARAMS: {:#?}", action.signature());
-        // action.call((200, Arguments::default()));
     }
 }

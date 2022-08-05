@@ -4,6 +4,7 @@ use value_types::TypeDef;
 
 use crate::{arguments::Arguments, errors::ValidationError};
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Default, Clone)]
 pub struct Parameters {
     vec: Arc<Vec<TypeDef<Cow<'static, str>>>>,
@@ -25,6 +26,24 @@ impl Parameters {
     }
 
     pub fn validate(&self, args: &Arguments) -> Result<(), ValidationError> {
+        let arg_types = args.types();
+
+        for (idx, param) in self.vec.iter().enumerate() {
+            let arg = match arg_types.get(idx) {
+                Some(arg) => arg,
+                None => {
+                    if param.is_optional() {
+                        continue;
+                    }
+
+                    panic!("");
+                }
+            };
+
+            if !param.is_like(arg) {
+                panic!("")
+            }
+        }
         Ok(())
     }
 }

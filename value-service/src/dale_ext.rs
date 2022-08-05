@@ -1,12 +1,10 @@
-use async_trait::async_trait;
-use dale::{IntoOutcome, Outcome, Service};
-use value_types::{FromValue, IntoValue};
-
 use crate::{
     arguments::{Arguments, ToArguments},
     errors::Error,
-    HandleFn, HandlerExt,
 };
+use async_trait::async_trait;
+use dale::{IntoOutcome, Outcome, Service};
+use value_types::{FromValue, IntoValue};
 
 #[async_trait]
 pub trait ServiceExt<C>: Service<(C, Arguments)> {
@@ -42,13 +40,3 @@ pub trait ServiceExt<C>: Service<(C, Arguments)> {
 }
 
 impl<C, S> ServiceExt<C> for S where S: Service<(C, Arguments)> {}
-
-async fn test() {
-    let task = HandleFn::new(|_: String| async move {
-        //
-        ()
-    })
-    .action();
-
-    task.exec::<String, _>(32, ("",)).await;
-}

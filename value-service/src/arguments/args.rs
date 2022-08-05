@@ -1,6 +1,6 @@
 use crate::errors::ArgumentError;
 use value::Value;
-use value_types::{FromValue, FromValueRef, IntoValue};
+use value_types::{FromValue, FromValueRef, HasTypeDef, IntoValue, TypeDef};
 
 #[derive(Default)]
 pub struct Arguments {
@@ -48,6 +48,18 @@ impl Arguments {
         };
 
         V::from_value(val.clone()).map_err(|err| err.into())
+    }
+
+    pub fn len(&self) -> usize {
+        self.args.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.args.is_empty()
+    }
+
+    pub fn types<'a>(&'a self) -> Vec<TypeDef<&'a String>> {
+        self.args.iter().map(|m| m.type_def()).collect()
     }
 }
 

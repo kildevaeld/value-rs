@@ -6,21 +6,22 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-channel = ["futures-channel", "futures-util"]
-default = ["serde", "channel"]
-serde = ["value/serde", "dep:serde"]
+# channel = ["futures-channel", "futures-util"]
+default = []
+serde = ["value/serde", "value-types/serde", "dep:serde"]
 
 [dependencies]
 async-trait = "0.1"
 dale = {git = "https://github.com/kildevaeld/stuff-rs", features = ["alloc"]}
-futures-channel = {version = "0.3", features = ["sink"], optional = true}
-futures-util = {version = "0.3", features = ["sink"], optional = true}
+# futures-channel = {version = "0.3", features = ["sink"], optional = true}
+# futures-util = {version = "0.3", features = ["sink"], optional = true}
 
 futures-core = {version = "0.3"}
-serde = {version = "1", optional = true}
 thiserror = "1"
 value = {path = "../value", features = ["std"]}
 value-types = {path = "../value-types"}
+
+serde = { version = "1", features = ["derive", "alloc", "rc"], optional = true}
 
 [dev-dependencies]
 futures-executor = "0.3"

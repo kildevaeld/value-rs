@@ -1,10 +1,10 @@
-mod channel;
+// mod channel;
 
 use dale::boxed::BoxFuture;
 
-use crate::builder::ValueService;
+use crate::service::Service;
 
-pub trait Instance<C>: ValueService<C> {}
+pub trait Instance<C>: Service<C> {}
 
 pub trait Transport<C> {
     type Serve;
@@ -13,7 +13,7 @@ pub trait Transport<C> {
 
     fn connect(&self, connect: Self::Connect) -> Self::Instance;
 
-    fn serve<S: ValueService<C> + Send + Sync + 'static>(
+    fn serve<S: Service<C> + Send + Sync + 'static>(
         self,
         service: S,
         serve: Self::Serve,

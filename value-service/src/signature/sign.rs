@@ -2,6 +2,7 @@ use super::Parameters;
 use std::borrow::Cow;
 use value_types::{TypeDef, ValueType};
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Signature {
     params: Parameters,

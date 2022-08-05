@@ -11,4 +11,4 @@ value = {path = "../value", features = ["std"]}
 
 [features]
 default = []
-serde = ["dep:serde"]
+serde = ["dep:serde", "value/serde"]

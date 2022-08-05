@@ -1,7 +1,7 @@
 use crate::{
     arguments::{Arguments, ToArguments},
-    builder::{ServiceDescription, ValueService},
     errors::{Error, IntoArgumentsError},
+    service::{Service, ServiceDescription},
 };
 
 use super::{Instance, Transport};
@@ -56,7 +56,7 @@ where
         }
     }
 
-    fn serve<S: ValueService<C> + Send + Sync + 'static>(
+    fn serve<S: Service<C, Error = Error> + Send + Sync + 'static>(
         mut self,
         service: S,
         _serve: Self::Serve,
@@ -72,7 +72,7 @@ where
                         ctx,
                         returns,
                     } => {
-                        let ret = service.call::<Value, _>(ctx, &method, args).await;
+                        let ret = service.call(ctx, &method, args).await;
                         returns.send(ret).ok();
                     }
                     Message::Desc { returns } => {
@@ -92,30 +92,21 @@ pub struct ChannelService<C> {
 }
 
 #[async_trait]
-impl<C> ValueService<C> for ChannelService<C>
+impl<C> Service<C> for ChannelService<C>
 where
     C: Send,
 {
+    type Error = Error;
     fn description(&self) -> &ServiceDescription<String> {
         todo!()
     }
 
-    async fn call<O: FromValue + 'static, A: ToArguments + Send>(
-        &self,
-        ctx: C,
-        name: &str,
-        args: A,
-    ) -> Result<O, Error>
-    where
-        O::Error: std::error::Error + Send + Sync + 'static,
-    {
+    async fn call(&self, ctx: C, name: &str, args: Arguments) -> Result<Value, Error> {
         let (returns, wait) = oneshot::channel();
 
         let msg = Message::Call {
             method: name.to_string(),
-            args: args
-                .to_arguments()
-                .map_err(|err| err.into() as IntoArgumentsError)?,
+            args,
             ctx,
             returns,
         };
@@ -126,12 +117,7 @@ where
             return Err(Error::Unknown(Box::new(err)));
         }
 
-        let ret = match wait.await.map_err(Error::unknown)? {
-            Ok(ret) => O::from_value(ret).map_err(Error::unknown),
-            Err(err) => Err(err),
-        };
-
-        ret
+        wait.await.map_err(Error::unknown)?
     }
 }
 
